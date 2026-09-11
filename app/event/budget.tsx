@@ -8,17 +8,55 @@ import { events } from '@/data/events';
 import { BudgetCategory, getBudgetCategories } from '@/data/eventBudget';
 
 const money = (value: number) => `฿${value.toLocaleString('en-US')}`;
+
 export default function EventBudgetScreen() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const event = events.find((item) => item.id === eventId) ?? events[0];
   const [categories, setCategories] = useState<BudgetCategory[]>(() => getBudgetCategories(event.id));
-  useFocusEffect(useCallback(() => setCategories(getBudgetCategories(event.id)), [event.id]));
+  useFocusEffect(useCallback(() => { setCategories(getBudgetCategories(event.id)); }, [event.id]));
   const planned = useMemo(() => categories.reduce((sum, category) => sum + category.planned, 0), [categories]);
   const used = useMemo(() => categories.reduce((sum, category) => sum + category.expenses.reduce((total, expense) => total + expense.amount, 0), 0), [categories]);
   const remaining = Math.max(event.budget - used, 0);
   const percent = event.budget ? Math.round((used / event.budget) * 100) : 0;
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ กลับไปภาพรวม</Text></Pressable><Text style={styles.title}>รายละเอียดงบประมาณ</Text><Text style={styles.subtitle}>{event.title}</Text><View style={styles.highlight}><View style={styles.row}><Value label="งบรวม" value={money(event.budget)} /><Value label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} /><Value label="เหลือ" value={money(remaining)} color={Theme.colors.success} /></View><View style={styles.track}><View style={[styles.progress, { width: `${Math.min(percent, 100)}%` }]} /></View><Text style={[styles.usage, percent >= 80 && styles.warning]}>{percent >= 80 ? 'ใกล้หรือเกินงบประมาณแล้ว' : `ใช้ไปแล้ว ${percent}% ของงบประมาณ`}</Text></View><View style={styles.sectionHeader}><Text style={styles.section}>หมวดงบประมาณ</Text><Text style={styles.planned}>ตั้งไว้ {money(planned)}</Text></View>{categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventBudget={event.budget} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}<Pressable onPress={() => router.push({ pathname: '/event/budget-category-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มหมวดงบประมาณ</Text></Pressable></ScrollView></SafeAreaView>;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ กลับไปภาพรวม</Text></Pressable>
+        <Text style={styles.title}>รายละเอียดงบประมาณ</Text>
+        <Text style={styles.subtitle}>{event.title}</Text>
+        <View style={styles.highlight}>
+          <View style={styles.row}><Value label="งบรวม" value={money(event.budget)} /><Value label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} /><Value label="เหลือ" value={money(remaining)} color={Theme.colors.success} /></View>
+          <View style={styles.track}><View style={[styles.progress, { width: `${Math.min(percent, 100)}%` }]} /></View>
+          <Text style={[styles.usage, percent >= 80 && styles.warning]}>{percent >= 80 ? 'ใกล้หรือเกินงบประมาณแล้ว' : `ใช้ไปแล้ว ${percent}% ของงบประมาณ`}</Text>
+        </View>
+        <View style={styles.sectionHeader}><Text style={styles.section}>หมวดงบประมาณ</Text><Text style={styles.planned}>ตั้งไว้ {money(planned)}</Text></View>
+        {categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventBudget={event.budget} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}
+        <Pressable onPress={() => router.push({ pathname: '/event/budget-category-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มหมวดงบประมาณ</Text></Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-function CategoryCard({ category, eventBudget, eventId }: { category: BudgetCategory; eventBudget: number; eventId: string }) { const used = category.expenses.reduce((sum, expense) => sum + expense.amount, 0); return <Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: { eventId, categoryId: category.id } })} style={styles.category}><View style={styles.row}><Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryAmount}>{money(used)} / {money(category.planned)}</Text></View><View style={styles.track}><View style={[styles.progress, { width: `${Math.min((used / Math.max(category.planned, 1)) * 100, 100)}%` }]} /></View><Text style={styles.tap}>{category.expenses.length} รายการ · แตะเพื่อดูรายละเอียด ›</Text><Text style={styles.ratio}>{eventBudget ? Math.round((category.planned / eventBudget) * 100) : 0}% ของงบรวม</Text></Pressable>; }
+
+function CategoryCard({ category, eventBudget, eventId }: { category: BudgetCategory; eventBudget: number; eventId: string }) {
+  const used = category.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const detailParams = { eventId, categoryId: category.id };
+  return <View style={styles.category}>
+    <View style={styles.row}>
+      <Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })} style={styles.categoryMain}>
+        <Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryAmount}>{money(used)} / {money(category.planned)}</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={`ตั้งงบประมาณหมวด ${category.name}`} hitSlop={8} onPress={() => router.push({ pathname: '/event/budget-category-new', params: detailParams })} style={styles.editButton}><Text style={styles.editIcon}>✎</Text></Pressable>
+    </View>
+    <Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })}>
+      <View style={styles.track}><View style={[styles.progress, { width: `${Math.min((used / Math.max(category.planned, 1)) * 100, 100)}%` }]} /></View>
+      <Text style={styles.tap}>{category.expenses.length} รายการ · แตะเพื่อดูรายละเอียด</Text><Text style={styles.ratio}>{eventBudget ? Math.round((category.planned / eventBudget) * 100) : 0}% ของงบรวม</Text>
+    </Pressable>
+  </View>;
+}
+
 function Value({ label, value, color = Theme.colors.text }: { label: string; value: string; color?: string }) { return <View style={styles.value}><Text style={styles.label}>{label}</Text><Text style={[styles.amount, { color }]}>{value}</Text></View>; }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: 20, paddingBottom: 40, gap: 16 }, back: { color: Theme.colors.primary, fontSize: 14, fontWeight: '600', minHeight: 36 }, title: { color: Theme.colors.text, fontSize: 24, fontWeight: '800' }, subtitle: { color: Theme.colors.muted, fontSize: 13 }, highlight: { backgroundColor: Theme.colors.primarySoft, borderWidth: 1, borderColor: Theme.colors.primary, borderRadius: 22, padding: 18, gap: 14 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }, value: { flex: 1, gap: 5 }, label: { color: Theme.colors.muted, fontSize: 11 }, amount: { fontSize: 16, fontWeight: '800' }, track: { height: 7, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' }, progress: { height: '100%', backgroundColor: Theme.colors.primary, borderRadius: 100 }, usage: { color: Theme.colors.muted, fontSize: 12, textAlign: 'center' }, warning: { color: Theme.colors.primary, fontWeight: '700' }, sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, section: { color: Theme.colors.text, fontSize: 16, fontWeight: '700' }, planned: { color: Theme.colors.muted, fontSize: 12 }, category: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 16, gap: 10 }, categoryName: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, categoryAmount: { color: Theme.colors.text, fontSize: 13, fontWeight: '700' }, tap: { color: Theme.colors.primary, fontSize: 11 }, ratio: { color: Theme.colors.muted, fontSize: 11 }, empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20 }, add: { minHeight: 52, backgroundColor: Theme.colors.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, addText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' } });
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: 20, paddingBottom: 40, gap: 16 }, backButton: { minHeight: 36, justifyContent: 'center' }, back: { color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }, title: { color: Theme.colors.text, fontSize: 24, fontWeight: '800' }, subtitle: { color: Theme.colors.muted, fontSize: 13 }, highlight: { backgroundColor: Theme.colors.primarySoft, borderWidth: 1, borderColor: Theme.colors.primary, borderRadius: 22, padding: 18, gap: 14 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }, value: { flex: 1, gap: 5 }, label: { color: Theme.colors.muted, fontSize: 11 }, amount: { fontSize: 16, fontWeight: '800' }, track: { height: 7, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' }, progress: { height: '100%', backgroundColor: Theme.colors.primary, borderRadius: 100 }, usage: { color: Theme.colors.muted, fontSize: 12, textAlign: 'center' }, warning: { color: Theme.colors.primary, fontWeight: '700' }, sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, section: { color: Theme.colors.text, fontSize: 16, fontWeight: '700' }, planned: { color: Theme.colors.muted, fontSize: 12 }, category: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 16, gap: 10 }, categoryMain: { flex: 1, gap: 5 }, categoryName: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, categoryAmount: { color: Theme.colors.text, fontSize: 13, fontWeight: '700' }, editButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft }, editIcon: { color: Theme.colors.primary, fontSize: 20, fontWeight: '700' }, tap: { color: Theme.colors.primary, fontSize: 11, marginTop: 8 }, ratio: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 }, empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20 }, add: { minHeight: 52, backgroundColor: Theme.colors.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, addText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+});
