@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { events } from '@/data/events';
@@ -25,7 +26,7 @@ export default function EventBudgetScreen() {
     <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
     <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{checklistProgress}%</Text><Text style={styles.progressLabel}>เช็คลิสต์</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>ภาพรวมงบประมาณ</Text><Text style={styles.progressDescription}>ใช้ไปแล้ว <Text style={styles.strong}>{percent}%</Text> ของงบประมาณทั้งหมด</Text></View></View>
     <View style={styles.stats}><Stat label="งบรวม" value={money(event.budget)} color={Theme.colors.text} background="#EEE7F9" /><Stat label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} background="#FDE3EA" /><Stat label="คงเหลือ" value={money(remaining)} color={Theme.colors.success} background="#DFF6EE" /></View>
-    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} /><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="แขก" onPress={() => router.push({ pathname: '/event/guests', params: { eventId: event.id } })} /><Tab label="ผู้ขาย" /></View>
+    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} /><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="แขก" onPress={() => router.push({ pathname: '/event/guests', params: { eventId: event.id } })} /><Tab label="seller" onPress={() => router.push({ pathname: '/event/sellers', params: { eventId: event.id } })} /></View>
     <View style={styles.subTabs}><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="งบประมาณ" active /></View>
     <View style={styles.sectionHeader}><View><Text style={styles.section}>งบประมาณตามหมวด</Text><Text style={styles.sectionHint}>แตะหมวดเพื่อดูรายการย่อย</Text></View><Text style={styles.planned}>ตั้งไว้ {money(planned)}</Text></View>
     {categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventBudget={event.budget} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}

@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { AppText as Text } from '@/components/AppText';
 import { Fonts, Theme } from '@/constants/theme';
 
 type Props = { title: string; onPress: () => void; variant?: 'primary' | 'outline' | 'ghost'; style?: ViewStyle };

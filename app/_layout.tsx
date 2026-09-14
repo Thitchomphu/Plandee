@@ -25,8 +25,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      textDefaults.defaultProps = { ...textDefaults.defaultProps, style: { fontFamily: Fonts.sans } };
-      inputDefaults.defaultProps = { ...inputDefaults.defaultProps, style: { fontFamily: Fonts.sans } };
+      textDefaults.defaultProps = { ...textDefaults.defaultProps, style: [{ fontFamily: Fonts.sans }, textDefaults.defaultProps?.style] };
+      inputDefaults.defaultProps = { ...inputDefaults.defaultProps, style: [{ fontFamily: Fonts.sans }, inputDefaults.defaultProps?.style] };
       void SplashScreen.hideAsync();
     }
   }, [loaded]);

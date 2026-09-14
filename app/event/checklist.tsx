@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { ChecklistItem, getChecklistItems, updateChecklistItem } from '@/data/checklists';
@@ -22,7 +23,7 @@ export default function EventChecklistScreen() {
     <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
     <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{progress}%</Text><Text style={styles.progressLabel}>เสร็จแล้ว</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>เตรียมงานไปแล้ว {progress}%</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} งาน</Text> ก่อนถึงวันจริง</Text></View></View>
     <View style={styles.stats}><Stat value={items.length} label="งานทั้งหมด" color="#1F8467" background="#DFF6EE" /><Stat value={done} label="งานเสร็จแล้ว" color="#6B4FA8" background="#EEE7F9" /><Stat value={items.length - done} label="งานค้างอยู่" color="#966016" background="#FFF1DA" /></View>
-    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => openTab('overview')} /><Tab label="เช็คลิสต์" active /><Tab label="แขก" onPress={() => openTab('guests')} /><Tab label="ผู้ขาย" /></View>
+    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => openTab('overview')} /><Tab label="เช็คลิสต์" active /><Tab label="แขก" onPress={() => openTab('guests')} /><Tab label="seller" onPress={() => router.push({ pathname: '/event/sellers', params: { eventId: event.id } })} /></View>
     <View style={styles.subTabs}><Tab label={`เช็คลิสต์ (${done}/${items.length})`} active /><Tab label="งบประมาณ" onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id } })} /></View>
     {grouped.map((category) => <View key={category} style={styles.group}><View style={styles.groupHeader}><Text style={styles.category}>{category}</Text><Text style={styles.categoryCount}>({items.filter((item) => item.category === category && item.done).length}/{items.filter((item) => item.category === category).length} เสร็จ)</Text></View>{items.filter((item) => item.category === category).map((item) => <ChecklistRow key={item.id} item={item} onToggle={() => toggle(item.id)} onEdit={() => router.push({ pathname: '/event/checklist-edit', params: { id: item.id } })} />)}</View>)}
   </ScrollView><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/event/checklist-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มรายการเช็คลิสต์</Text></Pressable></SafeAreaView>;

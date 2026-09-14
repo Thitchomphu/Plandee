@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { AppText as Text } from '@/components/AppText';
 import { Fonts, Theme } from '@/constants/theme';
 
 type Props = TextInputProps & { label: string; error?: string; containerStyle?: ViewStyle };

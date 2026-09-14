@@ -5,7 +5,7 @@ export const Theme = {
 };
 
 export const Fonts = {
-  sans: 'NotoSansThai_400Regular',
+  sans: 'NotoSansThai_500Medium',
   sansMedium: 'NotoSansThai_500Medium',
   sansSemiBold: 'NotoSansThai_600SemiBold',
   sansBold: 'NotoSansThai_700Bold',

@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 
 const menuItems = [
   { icon: '👤', label: 'ข้อมูลบัญชี' },
-  { icon: '🧾', label: 'ผู้ขายที่บันทึกไว้' },
+{ icon: '🧾', label: 'seller ที่บันทึกไว้' },
   { icon: '🔔', label: 'การแจ้งเตือน' },
   { icon: '⚙️', label: 'ตั้งค่า' },
 ];
