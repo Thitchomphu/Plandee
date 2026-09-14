@@ -5,12 +5,12 @@ export const Theme = {
 };
 
 export const Fonts = {
-  sans: 'NotoSansThai_400Regular',
-  sansMedium: 'NotoSansThai_500Medium',
-  sansSemiBold: 'NotoSansThai_600SemiBold',
-  sansBold: 'NotoSansThai_700Bold',
-  display: 'Mitr_500Medium',
-  displayBold: 'Mitr_700Bold',
+  sans: 'Kanit_400Regular',
+  sansMedium: 'Kanit_500Medium',
+  sansSemiBold: 'Kanit_600SemiBold',
+  sansBold: 'Kanit_700Bold',
+  display: 'Kanit_600SemiBold',
+  displayBold: 'Kanit_700Bold',
 };
 
 export const Colors = { light: { text: Theme.colors.text, background: Theme.colors.background, tint: Theme.colors.primary, icon: Theme.colors.muted, tabIconDefault: Theme.colors.muted, tabIconSelected: Theme.colors.primary }, dark: { text: Theme.colors.text, background: Theme.colors.background, tint: Theme.colors.primary, icon: Theme.colors.muted, tabIconDefault: Theme.colors.muted, tabIconSelected: Theme.colors.primary } };

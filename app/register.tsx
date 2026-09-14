@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { AppText as Text } from '@/components/AppText';
 import { Theme } from '@/constants/theme';
 
 const logo = 'https://www.figma.com/api/mcp/asset/1b51e38d-ad4e-48b1-b164-c48997100de7.svg';
