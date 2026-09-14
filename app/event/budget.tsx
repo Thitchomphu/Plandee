@@ -1,16 +1,16 @@
-import { useFocusEffect } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { events } from '@/data/events';
 import { BudgetCategory, getBudgetCategories } from '@/data/eventBudget';
+import { getChecklistProgress } from '@/data/checklists';
 
 const money = (value: number) => `฿${value.toLocaleString('en-US')}`;
 
 export default function EventBudgetScreen() {
-  const { eventId } = useLocalSearchParams<{ eventId?: string }>();
+  const { eventId = events[0].id } = useLocalSearchParams<{ eventId?: string }>();
   const event = events.find((item) => item.id === eventId) ?? events[0];
   const [categories, setCategories] = useState<BudgetCategory[]>(() => getBudgetCategories(event.id));
   useFocusEffect(useCallback(() => { setCategories(getBudgetCategories(event.id)); }, [event.id]));
@@ -18,45 +18,28 @@ export default function EventBudgetScreen() {
   const used = useMemo(() => categories.reduce((sum, category) => sum + category.expenses.reduce((total, expense) => total + expense.amount, 0), 0), [categories]);
   const remaining = Math.max(event.budget - used, 0);
   const percent = event.budget ? Math.round((used / event.budget) * 100) : 0;
+  const checklistProgress = getChecklistProgress(event.id);
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ กลับไปภาพรวม</Text></Pressable>
-        <Text style={styles.title}>รายละเอียดงบประมาณ</Text>
-        <Text style={styles.subtitle}>{event.title}</Text>
-        <View style={styles.highlight}>
-          <View style={styles.row}><Value label="งบรวม" value={money(event.budget)} /><Value label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} /><Value label="เหลือ" value={money(remaining)} color={Theme.colors.success} /></View>
-          <View style={styles.track}><View style={[styles.progress, { width: `${Math.min(percent, 100)}%` }]} /></View>
-          <Text style={[styles.usage, percent >= 80 && styles.warning]}>{percent >= 80 ? 'ใกล้หรือเกินงบประมาณแล้ว' : `ใช้ไปแล้ว ${percent}% ของงบประมาณ`}</Text>
-        </View>
-        <View style={styles.sectionHeader}><Text style={styles.section}>หมวดงบประมาณ</Text><Text style={styles.planned}>ตั้งไว้ {money(planned)}</Text></View>
-        {categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventBudget={event.budget} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}
-        <Pressable onPress={() => router.push({ pathname: '/event/budget-category-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มหมวดงบประมาณ</Text></Pressable>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.headerTitle} numberOfLines={1}>{event.title}</Text><Pressable onPress={() => {}} hitSlop={8}><Text style={styles.more}>•••</Text></Pressable></View>
+    <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
+    <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{checklistProgress}%</Text><Text style={styles.progressLabel}>เช็คลิสต์</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>ภาพรวมงบประมาณ</Text><Text style={styles.progressDescription}>ใช้ไปแล้ว <Text style={styles.strong}>{percent}%</Text> ของงบประมาณทั้งหมด</Text></View></View>
+    <View style={styles.stats}><Stat label="งบรวม" value={money(event.budget)} color={Theme.colors.text} background="#EEE7F9" /><Stat label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} background="#FDE3EA" /><Stat label="คงเหลือ" value={money(remaining)} color={Theme.colors.success} background="#DFF6EE" /></View>
+    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} /><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="แขก" onPress={() => router.push({ pathname: '/event/guests', params: { eventId: event.id } })} /><Tab label="ผู้ขาย" /></View>
+    <View style={styles.subTabs}><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="งบประมาณ" active /></View>
+    <View style={styles.sectionHeader}><View><Text style={styles.section}>งบประมาณตามหมวด</Text><Text style={styles.sectionHint}>แตะหมวดเพื่อดูรายการย่อย</Text></View><Text style={styles.planned}>ตั้งไว้ {money(planned)}</Text></View>
+    {categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventBudget={event.budget} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}
+    <Pressable onPress={() => router.push({ pathname: '/event/budget-category-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มหมวดงบประมาณ</Text></Pressable>
+  </ScrollView></SafeAreaView>;
 }
 
 function CategoryCard({ category, eventBudget, eventId }: { category: BudgetCategory; eventBudget: number; eventId: string }) {
   const used = category.expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const detailParams = { eventId, categoryId: category.id };
-  return <View style={styles.category}>
-    <View style={styles.row}>
-      <Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })} style={styles.categoryMain}>
-        <Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryAmount}>{money(used)} / {money(category.planned)}</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={`ตั้งงบประมาณหมวด ${category.name}`} hitSlop={8} onPress={() => router.push({ pathname: '/event/budget-category-new', params: detailParams })} style={styles.editButton}><Text style={styles.editIcon}>✎</Text></Pressable>
-    </View>
-    <Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })}>
-      <View style={styles.track}><View style={[styles.progress, { width: `${Math.min((used / Math.max(category.planned, 1)) * 100, 100)}%` }]} /></View>
-      <Text style={styles.tap}>{category.expenses.length} รายการ · แตะเพื่อดูรายละเอียด</Text><Text style={styles.ratio}>{eventBudget ? Math.round((category.planned / eventBudget) * 100) : 0}% ของงบรวม</Text>
-    </Pressable>
-  </View>;
+  return <View style={styles.category}><View style={styles.categoryHeader}><Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })} style={styles.categoryMain}><Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryAmount}>{money(used)} / {money(category.planned)}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`ตั้งงบประมาณหมวด ${category.name}`} hitSlop={8} onPress={() => router.push({ pathname: '/event/budget-category-new', params: detailParams })} style={styles.editButton}><Text style={styles.editIcon}>✎</Text></Pressable></View><Pressable onPress={() => router.push({ pathname: '/event/budget-category', params: detailParams })}><View style={styles.track}><View style={[styles.progress, { width: `${Math.min((used / Math.max(category.planned, 1)) * 100, 100)}%` }]} /></View><View style={styles.categoryFooter}><Text style={styles.tap}>{category.expenses.length} รายการ</Text><Text style={styles.ratio}>{eventBudget ? Math.round((category.planned / eventBudget) * 100) : 0}% ของงบรวม</Text></View></Pressable></View>;
 }
 
-function Value({ label, value, color = Theme.colors.text }: { label: string; value: string; color?: string }) { return <View style={styles.value}><Text style={styles.label}>{label}</Text><Text style={[styles.amount, { color }]}>{value}</Text></View>; }
+function Tab({ label, active = false, onPress }: { label: string; active?: boolean; onPress?: () => void }) { return <Pressable onPress={onPress} disabled={!onPress} style={[styles.tab, active ? styles.activeTab : styles.inactiveTab]}><Text style={[styles.tabText, active ? styles.activeTabText : styles.inactiveTabText]}>{label}</Text></Pressable>; }
+function Stat({ label, value, color, background }: { label: string; value: string; color: string; background: string }) { return <View style={[styles.stat, { backgroundColor: background }]}><Text style={[styles.statValue, { color }]}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: 20, paddingBottom: 40, gap: 16 }, backButton: { minHeight: 36, justifyContent: 'center' }, back: { color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }, title: { color: Theme.colors.text, fontSize: 24, fontWeight: '800' }, subtitle: { color: Theme.colors.muted, fontSize: 13 }, highlight: { backgroundColor: Theme.colors.primarySoft, borderWidth: 1, borderColor: Theme.colors.primary, borderRadius: 22, padding: 18, gap: 14 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }, value: { flex: 1, gap: 5 }, label: { color: Theme.colors.muted, fontSize: 11 }, amount: { fontSize: 16, fontWeight: '800' }, track: { height: 7, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' }, progress: { height: '100%', backgroundColor: Theme.colors.primary, borderRadius: 100 }, usage: { color: Theme.colors.muted, fontSize: 12, textAlign: 'center' }, warning: { color: Theme.colors.primary, fontWeight: '700' }, sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, section: { color: Theme.colors.text, fontSize: 16, fontWeight: '700' }, planned: { color: Theme.colors.muted, fontSize: 12 }, category: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 16, gap: 10 }, categoryMain: { flex: 1, gap: 5 }, categoryName: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, categoryAmount: { color: Theme.colors.text, fontSize: 13, fontWeight: '700' }, editButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft }, editIcon: { color: Theme.colors.primary, fontSize: 20, fontWeight: '700' }, tap: { color: Theme.colors.primary, fontSize: 11, marginTop: 8 }, ratio: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 }, empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20 }, add: { minHeight: 52, backgroundColor: Theme.colors.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, addText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-});
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { paddingHorizontal: 22, paddingTop: 10, paddingBottom: 36, gap: 16 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 38 }, back: { color: Theme.colors.text, fontSize: 30, lineHeight: 32 }, headerTitle: { flex: 1, textAlign: 'center', color: Theme.colors.text, fontSize: 16, fontWeight: '800' }, more: { color: Theme.colors.text, fontSize: 18, letterSpacing: 2 }, banner: { minHeight: 88, borderRadius: 22, padding: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, date: { fontSize: 14, fontWeight: '700' }, venue: { color: Theme.colors.muted, fontSize: 12, marginTop: 5 }, eventIcon: { fontSize: 40 }, progressRow: { flexDirection: 'row', alignItems: 'center', gap: 18 }, progressRing: { width: 86, height: 86, borderRadius: 43, borderWidth: 8, borderColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' }, progressValue: { color: Theme.colors.text, fontSize: 17, fontWeight: '800' }, progressLabel: { color: Theme.colors.muted, fontSize: 9, marginTop: 1 }, progressText: { flex: 1, gap: 5 }, progressTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, progressDescription: { color: Theme.colors.muted, fontSize: 13 }, strong: { color: Theme.colors.text, fontWeight: '700' }, stats: { flexDirection: 'row', gap: 8 }, stat: { flex: 1, padding: 12, borderRadius: 18, gap: 4 }, statValue: { fontSize: 13, fontWeight: '700' }, statLabel: { color: Theme.colors.muted, fontSize: 10 }, tabs: { flexDirection: 'row', gap: 8 }, subTabs: { flexDirection: 'row', gap: 8, paddingTop: 2 }, tab: { minHeight: 38, paddingHorizontal: 15, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, activeTab: { backgroundColor: Theme.colors.text }, inactiveTab: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border }, tabText: { fontSize: 12, fontWeight: '600' }, activeTabText: { color: '#FFFFFF' }, inactiveTabText: { color: Theme.colors.muted }, sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }, section: { color: Theme.colors.text, fontSize: 17, fontWeight: '800' }, sectionHint: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 }, planned: { color: Theme.colors.muted, fontSize: 11 }, category: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 20, padding: 16, gap: 12 }, categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 }, categoryMain: { flex: 1, gap: 4 }, categoryName: { color: Theme.colors.text, fontSize: 14, fontWeight: '800' }, categoryAmount: { color: Theme.colors.text, fontSize: 13, fontWeight: '700' }, editButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft }, editIcon: { color: Theme.colors.primary, fontSize: 20, fontWeight: '700' }, track: { height: 8, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' }, progress: { height: '100%', backgroundColor: Theme.colors.primary, borderRadius: 100 }, categoryFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, tap: { color: Theme.colors.primary, fontSize: 11 }, ratio: { color: Theme.colors.muted, fontSize: 11 }, empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20 }, add: { minHeight: 52, backgroundColor: Theme.colors.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, addText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' } });

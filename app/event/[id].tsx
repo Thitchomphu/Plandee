@@ -1,5 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +13,7 @@ export default function EventOverviewScreen() {
   const event = events.find((item) => item.id === id) ?? events[0];
   const [progress, setProgress] = useState(getChecklistProgress(event.id));
   const [pending, setPending] = useState(getChecklistItems(event.id).filter((item) => !item.done).length);
-  useFocusEffect(useCallback(() => { setProgress(getChecklistProgress(event.id)); setPending(getChecklistItems(event.id).filter((item) => !item.done).length); }, [event.id]));
+  useFocusEffect(useCallback(() => { setProgress(getChecklistProgress(event.id)); setPending(getChecklistItems(event.id).filter((item) => !item.done).length); }, [event.id, setPending, setProgress]));
   const menu = () => Alert.alert('จัดการงาน', undefined, [{ text: 'แก้ไขงาน', onPress: () => router.push('/event/new') }, { text: 'ทำเครื่องหมายว่าเสร็จแล้ว' }, { text: 'ลบงาน', style: 'destructive' }, { text: 'ยกเลิก', style: 'cancel' }]);
   const openTab = (tab: Tab) => { if (tab === 'checklist') return router.push({ pathname: '/event/checklist', params: { eventId: event.id } }); if (tab === 'guests') return router.push({ pathname: '/event/guests', params: { eventId: event.id } }); };
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}><View style={styles.header}><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ งานของฉัน</Text></Pressable><Pressable accessibilityLabel="เมนูงาน" onPress={menu}><Text style={styles.more}>•••</Text></Pressable></View><View style={[styles.hero, { backgroundColor: event.banner }]}><Text style={styles.heroIcon}>{event.icon}</Text><Text style={[styles.days, { color: event.accent }]}>{event.status === 'completed' ? 'เสร็จแล้ว' : `อีก ${event.daysLeft} วัน`}</Text></View><Text style={styles.title}>{event.title}</Text><Text style={styles.meta}>{event.date} · {event.venue}</Text><View style={styles.tabs}>{(['overview', 'checklist', 'guests', 'vendors'] as Tab[]).map((tab) => <Pressable key={tab} onPress={() => openTab(tab)} style={[styles.tab, tab === 'overview' && styles.tabActive]}><Text style={[styles.tabText, tab === 'overview' && styles.tabTextActive]}>{tab === 'overview' ? 'ภาพรวม' : tab === 'checklist' ? 'เช็คลิสต์' : tab === 'guests' ? 'แขก' : 'ผู้ขาย'}</Text></Pressable>)}</View><Overview event={event} progress={progress} pending={pending} /></ScrollView></SafeAreaView>;
