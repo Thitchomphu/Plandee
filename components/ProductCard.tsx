@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Product } from '@/data/products';
 import { Fonts, Theme } from '@/constants/theme';
+import { AppText as Text } from '@/components/AppText';
 
 export function ProductCard({ product, onPress }: { product: Product; onPress?: () => void }) {
   return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}><View style={[styles.art, { backgroundColor: product.color }]}><Text style={styles.artText}>✦</Text></View><View style={styles.body}><Text style={styles.category}>{product.category}</Text><Text style={styles.name} numberOfLines={1}>{product.name}</Text><Text style={styles.price}>{product.price}</Text></View></Pressable>;

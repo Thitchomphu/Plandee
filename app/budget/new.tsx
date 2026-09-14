@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { AppText as Text } from '@/components/AppText';
 import { Theme } from '@/constants/theme';
 import { addExpense } from '@/data/budget';
 

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { AppButton } from '@/components/AppButton';
+import { AppText as Text } from '@/components/AppText';
 
 const logo = 'https://www.figma.com/api/mcp/asset/de286ff3-a832-4772-9559-be193ad2f21a.svg';
 
