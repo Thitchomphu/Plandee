@@ -15,7 +15,12 @@ export default function EventChecklistScreen() {
   const done = items.filter((item) => item.done).length;
   const progress = items.length ? Math.round((done / items.length) * 100) : 0;
   const grouped = useMemo(() => Array.from(new Set(items.map((item) => item.category))), [items]);
-  const toggle = (id: string) => { const item = items.find((value) => value.id === id); if (item) { updateChecklistItem(id, { done: !item.done }); setItems(getChecklistItems(event.id)); } };
+  const toggle = async (id: string) => {
+    const item = items.find((value) => value.id === id);
+    if (!item) return;
+    const { error } = await updateChecklistItem(id, { done: !item.done });
+    if (!error) setItems(getChecklistItems(event.id));
+  };
   const openTab = (tab: 'overview' | 'checklist' | 'guests') => { if (tab === 'overview') router.push({ pathname: '/event/[id]', params: { id: event.id } }); if (tab === 'guests') router.push({ pathname: '/event/guests', params: { eventId: event.id } }); };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

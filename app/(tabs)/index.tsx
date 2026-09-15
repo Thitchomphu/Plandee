@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,10 +7,29 @@ import { ProductCard } from '@/components/ProductCard';
 import { Theme } from '@/constants/theme';
 import { events } from '@/data/events';
 import { products } from '@/data/products';
+import { supabase } from '@/lib/supabase';
+import { userDisplayName } from '@/lib/profile';
 
 export default function HomeScreen() {
   const [cartCount, setCartCount] = useState(0);
+  const [displayName, setDisplayName] = useState('ผู้ใช้ใหม่');
+  const [version, setVersion] = useState(0);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setVersion((value) => value + 1);
+    void (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+      if (active) setDisplayName((data as { display_name?: string | null } | null)?.display_name ?? userDisplayName(user));
+    })();
+    return () => { active = false; };
+  }, []));
+  void version;
   const upcomingEvents = events.slice(0, 2);
+  const totalBudget = events.reduce((sum, event) => sum + event.budget, 0);
+  const upcomingCount = events.filter((event) => event.status === 'upcoming').length;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -18,16 +37,16 @@ export default function HomeScreen() {
         <View style={styles.greeting}>
           <View style={styles.greetingText}>
             <Text style={styles.eyebrow}>ภาพรวมของคุณ</Text>
-            <Text style={styles.title}>สวัสดี คุณมิว 👋</Text>
+            <Text style={styles.title}>สวัสดี คุณ{displayName} 👋</Text>
             <Text style={styles.subtitle}>มาดูความคืบหน้าของงานกัน</Text>
           </View>
-          <View style={styles.avatar}><Text style={styles.avatarText}>มิว</Text></View>
+          <View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1).toUpperCase()}</Text></View>
         </View>
 
         <View style={styles.metrics}>
-          <Metric value="4" label="งานทั้งหมด" color={Theme.colors.primary} />
-          <Metric value="3" label="กำลังจะถึง" color={Theme.colors.success} />
-          <Metric value="฿310k" label="งบประมาณรวม" color={Theme.colors.text} />
+          <Metric value={String(events.length)} label="งานทั้งหมด" color={Theme.colors.primary} />
+          <Metric value={String(upcomingCount)} label="กำลังจะถึง" color={Theme.colors.success} />
+          <Metric value={`฿${totalBudget.toLocaleString('en-US')}`} label="งบประมาณรวม" color={Theme.colors.text} />
         </View>
 
         <Pressable accessibilityRole="button" onPress={() => router.push('/event/new')} style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
@@ -39,6 +58,7 @@ export default function HomeScreen() {
 
         <SectionHeader title="งานที่ใกล้กำหนด" onSeeAll={() => router.push('/events')} />
         <View style={styles.eventList}>
+          {upcomingEvents.length === 0 ? <Pressable onPress={() => router.push('/event/new')} style={styles.emptyEvent}><Text style={styles.emptyEventTitle}>ยังไม่มีงานที่กำลังจะมาถึง</Text><Text style={styles.emptyEventBody}>เริ่มสร้างงานแรกของคุณเพื่อจัดการเช็กลิสต์และงบประมาณ</Text></Pressable> : null}
           {upcomingEvents.map((event) => <Pressable key={event.id} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} style={({ pressed }) => [styles.eventCard, pressed && styles.pressed]}>
             <View style={[styles.eventIcon, { backgroundColor: event.banner }]}><Text style={styles.eventEmoji}>{event.icon}</Text></View>
             <View style={styles.eventInfo}><Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text><Text style={styles.eventMeta}>{event.date} · {event.status === 'completed' ? 'เสร็จแล้ว' : `อีก ${event.daysLeft} วัน`}</Text><View style={styles.progressTrack}><View style={[styles.progress, { width: `${event.progress}%`, backgroundColor: event.accent }]} /></View></View>
@@ -87,6 +107,9 @@ const styles = StyleSheet.create({
   sectionTitle: { color: Theme.colors.text, fontSize: 17, fontWeight: '800' },
   seeAll: { color: Theme.colors.primary, fontSize: 12, fontWeight: '700' },
   eventList: { gap: 10 },
+  emptyEvent: { padding: 18, borderRadius: Theme.radius.lg, backgroundColor: Theme.colors.surface, borderWidth: 1, borderStyle: 'dashed', borderColor: Theme.colors.border, gap: 4 },
+  emptyEventTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' },
+  emptyEventBody: { color: Theme.colors.muted, fontSize: 12, lineHeight: 18 },
   eventCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: Theme.radius.lg },
   eventIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   eventEmoji: { fontSize: 22 },

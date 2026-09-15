@@ -2,14 +2,14 @@ import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
 import { Fonts, Theme } from '@/constants/theme';
 
-type Props = { title: string; onPress: () => void; variant?: 'primary' | 'outline' | 'ghost'; style?: ViewStyle };
+type Props = { title: string; onPress: () => void; variant?: 'primary' | 'outline' | 'ghost'; style?: ViewStyle; disabled?: boolean };
 
-export function AppButton({ title, onPress, variant = 'primary', style }: Props) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, style]}><Text style={[styles.label, variant === 'outline' && styles.outlineLabel]}>{title}</Text></Pressable>;
+export function AppButton({ title, onPress, variant = 'primary', style, disabled = false }: Props) {
+  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.base, styles[variant], disabled && styles.disabled, pressed && styles.pressed, style]}><Text style={[styles.label, variant === 'outline' && styles.outlineLabel]}>{title}</Text></Pressable>;
 }
 
 const styles = StyleSheet.create({
   base: { minHeight: 52, borderRadius: Theme.radius.lg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   primary: { backgroundColor: Theme.colors.primary }, outline: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: '#DDDDDD' }, ghost: { backgroundColor: 'transparent', minHeight: 44 },
-  label: { color: '#FFFFFF', fontFamily: Fonts.display, fontSize: 16, fontWeight: '600' }, outlineLabel: { color: Theme.colors.text }, pressed: { opacity: 0.78 },
+  label: { color: '#FFFFFF', fontFamily: Fonts.display, fontSize: 16, fontWeight: '600' }, outlineLabel: { color: Theme.colors.text }, disabled: { opacity: 0.55 }, pressed: { opacity: 0.78 },
 });

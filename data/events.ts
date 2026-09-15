@@ -1,19 +1,44 @@
+import { supabase } from '@/lib/supabase';
+import { ensureProfile } from '@/lib/profile';
+import { hydrateChecklistItems } from '@/data/checklists';
+
 export type EventStatus = 'upcoming' | 'completed';
-export type EventItem = {
-  id: string; title: string; date: string; venue: string; kind: string; icon: string;
-  daysLeft: number; progress: number; status: EventStatus; banner: string; accent: string;
-  budget: number; guests: number; pending: number;
-};
+export type EventItem = { id: string; title: string; date: string; venue: string; kind: string; icon: string; daysLeft: number; progress: number; status: EventStatus; banner: string; accent: string; budget: number; guests: number; pending: number };
 
-export const events: EventItem[] = [
-  { id: 'wedding-ploi-james', title: 'งานแต่งงาน พลอย & เจมส์', date: '14 ก.พ. 2569', venue: 'โรงแรมเชอราม', kind: 'งานแต่ง', icon: '💍', daysLeft: 12, progress: 69, status: 'upcoming', banner: '#FFF0F3', accent: '#E9436F', budget: 150000, guests: 120, pending: 4 },
-  { id: 'annual-abc', title: 'สัมมนาประจำปี บริษัท ABC', date: '10 มี.ค. 2569', venue: 'ศูนย์ประชุมฯ', kind: 'สัมมนา', icon: '💼', daysLeft: 25, progress: 35, status: 'upcoming', banner: '#E4F1FA', accent: '#3E7CA6', budget: 120000, guests: 80, pending: 7 },
-  { id: 'peach-birthday', title: 'ปาร์ตี้วันเกิด น้องพีช 6 ขวบ', date: '25 มี.ค. 2569', venue: 'บ้านคุณลูกค้า', kind: 'ปาร์ตี้', icon: '🎈', daysLeft: 40, progress: 15, status: 'upcoming', banner: '#FFF0F3', accent: '#E9436F', budget: 40000, guests: 25, pending: 9 },
-  { id: 'launch-complete', title: 'งานเปิดตัวสินค้าใหม่', date: '20 ม.ค. 2569', venue: 'โรงแรมใจกลางเมือง', kind: 'เปิดตัวสินค้า', icon: '🎉', daysLeft: 0, progress: 100, status: 'completed', banner: '#E9F8F3', accent: '#1F8467', budget: 90000, guests: 60, pending: 0 },
-];
+export let events: EventItem[] = [];
 
-export const addEvent = (event: Omit<EventItem, 'id'>) => {
-  const created = { ...event, id: `event-${Date.now()}` };
-  events.push(created);
-  return created;
-};
+type CloudEvent = { id: string; title: string; event_date: string; event_date_label: string | null; venue: string | null; kind: string; status: EventStatus; banner_color: string | null; accent_color: string | null; icon: string | null; budget: number };
+const daysUntil = (date: string) => Math.max(0, Math.ceil((new Date(`${date}T00:00:00`).getTime() - Date.now()) / 86400000));
+const displayDate = (value: string) => new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
+
+export async function hydrateEvents() {
+  const { data, error } = await supabase.from('events').select('id,title,event_date,event_date_label,venue,kind,status,banner_color,accent_color,icon,budget').order('event_date', { ascending: true });
+  if (error) return false;
+  const cloudEvents = (data ?? []) as unknown as CloudEvent[];
+  if (!cloudEvents.length) { events = []; return true; }
+  const eventIds = cloudEvents.map((event) => event.id);
+  const [{ data: checklistRows }, { data: guestRows }] = await Promise.all([
+    supabase.from('checklist_items').select('event_id,done').in('event_id', eventIds),
+    supabase.from('guests').select('event_id,rsvp').in('event_id', eventIds),
+  ]);
+  const checklist = (checklistRows ?? []) as unknown as { event_id: string; done: boolean }[];
+  const guests = (guestRows ?? []) as unknown as { event_id: string; rsvp: string }[];
+  events = cloudEvents.map((event) => {
+    const items = checklist.filter((item) => item.event_id === event.id);
+    const eventGuests = guests.filter((guest) => guest.event_id === event.id);
+    const storedLabel = event.event_date_label;
+    return { id: event.id, title: event.title, date: storedLabel && !/^\d{4}-\d{2}-\d{2}$/.test(storedLabel) ? storedLabel : displayDate(event.event_date), venue: event.venue ?? 'ยังไม่ได้ระบุสถานที่', kind: event.kind, icon: event.icon ?? '📅', daysLeft: event.status === 'completed' ? 0 : daysUntil(event.event_date), progress: items.length ? Math.round((items.filter((item) => item.done).length / items.length) * 100) : 0, status: event.status, banner: event.banner_color ?? '#FFF0F3', accent: event.accent_color ?? '#E9436F', budget: Number(event.budget), guests: eventGuests.length, pending: items.filter((item) => !item.done).length };
+  });
+  return true;
+}
+
+export async function createEventWithChecklist(input: { title: string; kind: string; eventDate: string; venue?: string; budget: number; checklist: { title: string; category: string; dueDate?: string; budget?: number; note?: string }[] }) {
+  const profileResult = await ensureProfile();
+  if (profileResult.error) return { event: null, error: profileResult.error };
+  const checklist = input.checklist.map((item) => ({ ...item, dueDate: /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate ?? '') ? item.dueDate : null, budget: item.budget ?? 0 }));
+  const { data, error } = await supabase.rpc('create_event_with_checklist', { p_title: input.title, p_kind: input.kind, p_event_date: input.eventDate, p_venue: input.venue ?? null, p_budget: input.budget, p_checklist: checklist });
+  if (error) return { event: null, error };
+  await hydrateChecklistItems();
+  await hydrateEvents();
+  return { event: events.find((event) => event.id === (data as unknown as { id: string }).id) ?? null, error: null };
+}
