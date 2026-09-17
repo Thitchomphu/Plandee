@@ -2,16 +2,17 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
+import { ProgressDonut } from '@/components/ProgressDonut';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
-import { ChecklistItem, getChecklistItems, updateChecklistItem } from '@/data/checklists';
+import { ChecklistItem, getChecklistItems, hydrateChecklistItems, updateChecklistItem } from '@/data/checklists';
 import { events } from '@/data/events';
 
 export default function EventChecklistScreen() {
   const { eventId = events[0].id } = useLocalSearchParams<{ eventId?: string }>();
   const event = events.find((item) => item.id === eventId) ?? events[0];
   const [items, setItems] = useState<ChecklistItem[]>(() => getChecklistItems(event.id));
-  useFocusEffect(useCallback(() => { setItems(getChecklistItems(event.id)); }, [event.id]));
+  useFocusEffect(useCallback(() => { void hydrateChecklistItems().then(() => setItems(getChecklistItems(event.id))); }, [event.id]));
   const done = items.filter((item) => item.done).length;
   const progress = items.length ? Math.round((done / items.length) * 100) : 0;
   const grouped = useMemo(() => Array.from(new Set(items.map((item) => item.category))), [items]);
@@ -26,7 +27,7 @@ export default function EventChecklistScreen() {
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.headerTitle} numberOfLines={1}>{event.title}</Text><Pressable onPress={() => {}} hitSlop={8}><Text style={styles.more}>•••</Text></Pressable></View>
     <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
-    <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{progress}%</Text><Text style={styles.progressLabel}>เสร็จแล้ว</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>เตรียมงานไปแล้ว {progress}%</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} งาน</Text> ก่อนถึงวันจริง</Text></View></View>
+    <View style={styles.progressRow}><View style={styles.progressRing}><ProgressDonut value={progress} /></View><View style={styles.progressText}><Text style={styles.progressTitle}>เตรียมงานไปแล้ว {progress}%</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} งาน</Text> ก่อนถึงวันจริง</Text></View></View>
     <View style={styles.stats}><Stat value={items.length} label="งานทั้งหมด" color="#1F8467" background="#DFF6EE" /><Stat value={done} label="งานเสร็จแล้ว" color="#6B4FA8" background="#EEE7F9" /><Stat value={items.length - done} label="งานค้างอยู่" color="#966016" background="#FFF1DA" /></View>
     <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => openTab('overview')} /><Tab label="เช็คลิสต์" active /><Tab label="แขก" onPress={() => openTab('guests')} /><Tab label="seller" onPress={() => router.push({ pathname: '/event/sellers', params: { eventId: event.id } })} /></View>
     <View style={styles.subTabs}><Tab label={`เช็คลิสต์ (${done}/${items.length})`} active /><Tab label="งบประมาณ" onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id } })} /></View>

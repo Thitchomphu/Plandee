@@ -5,7 +5,7 @@ import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProductCard } from '@/components/ProductCard';
 import { Theme } from '@/constants/theme';
-import { events } from '@/data/events';
+import { events, hydrateEvents } from '@/data/events';
 import { products } from '@/data/products';
 import { supabase } from '@/lib/supabase';
 import { userDisplayName } from '@/lib/profile';
@@ -18,6 +18,8 @@ export default function HomeScreen() {
     let active = true;
     setVersion((value) => value + 1);
     void (async () => {
+      await hydrateEvents();
+      if (active) setVersion((value) => value + 1);
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (!user) return;
@@ -61,7 +63,7 @@ export default function HomeScreen() {
           {upcomingEvents.length === 0 ? <Pressable onPress={() => router.push('/event/new')} style={styles.emptyEvent}><Text style={styles.emptyEventTitle}>ยังไม่มีงานที่กำลังจะมาถึง</Text><Text style={styles.emptyEventBody}>เริ่มสร้างงานแรกของคุณเพื่อจัดการเช็กลิสต์และงบประมาณ</Text></Pressable> : null}
           {upcomingEvents.map((event) => <Pressable key={event.id} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} style={({ pressed }) => [styles.eventCard, pressed && styles.pressed]}>
             <View style={[styles.eventIcon, { backgroundColor: event.banner }]}><Text style={styles.eventEmoji}>{event.icon}</Text></View>
-            <View style={styles.eventInfo}><Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text><Text style={styles.eventMeta}>{event.date} · {event.status === 'completed' ? 'เสร็จแล้ว' : `อีก ${event.daysLeft} วัน`}</Text><View style={styles.progressTrack}><View style={[styles.progress, { width: `${event.progress}%`, backgroundColor: event.accent }]} /></View></View>
+            <View style={styles.eventInfo}><Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text><Text style={styles.eventMeta}>{event.date} · {event.status === 'completed' ? 'เสร็จแล้ว' : `อีก ${event.daysLeft} วัน`}</Text><View style={styles.progressHeader}><Text style={styles.progressLabel}>{event.progress}% เสร็จแล้ว</Text><Text style={styles.progressCount}>{event.pending} งานค้าง</Text></View><View style={styles.progressTrack}><View style={[styles.progress, { width: `${event.progress}%`, backgroundColor: event.accent }]} /></View></View>
             <Text style={styles.chevron}>›</Text>
           </Pressable>)}
         </View>
@@ -116,6 +118,9 @@ const styles = StyleSheet.create({
   eventInfo: { flex: 1, gap: 4 },
   eventTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' },
   eventMeta: { color: Theme.colors.muted, fontSize: 11 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 },
+  progressLabel: { color: Theme.colors.text, fontSize: 10, fontWeight: '700' },
+  progressCount: { color: Theme.colors.muted, fontSize: 10 },
   progressTrack: { height: 5, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden', marginTop: 3 },
   progress: { height: '100%', borderRadius: 100 },
   chevron: { color: Theme.colors.muted, fontSize: 26 },

@@ -2,6 +2,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
+import { EventTabs } from '@/components/EventTabs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { events } from '@/data/events';
@@ -25,7 +26,7 @@ export default function GuestListScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹ กลับไปภาพรวม</Text></Pressable><Text style={styles.menu}>•••</Text></View>
-        <Text style={styles.title}>รายชื่อแขก</Text><Text style={styles.subtitle}>{event.title}</Text>
+        <Text style={styles.title}>รายชื่อแขก</Text><Text style={styles.subtitle}>{event.title}</Text><EventTabs eventId={event.id} active="guests" />
         <View style={styles.summary}><Text style={styles.summaryNumber}>{accepted}/{guests.length}</Text><Text style={styles.summaryText}>แขกตอบรับแล้ว</Text><Pressable onPress={() => router.push({ pathname: '/event/guests-new', params: { eventId: event.id } })} style={styles.addSmall}><Text style={styles.addSmallText}>＋ เพิ่มแขก</Text></Pressable></View>
         <View style={styles.switchRow}><Pressable onPress={() => setFilter('all')} style={styles.seatingTab}><Text style={styles.seatingText}>👤 รายชื่อ</Text></Pressable><Pressable onPress={() => router.push({ pathname: '/event/seating', params: { eventId: event.id } })} style={styles.tab}><Text style={styles.tabText}>🪑 จัดที่นั่ง</Text></Pressable></View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{filters.map((item) => <Pressable key={item.key} onPress={() => setFilter(item.key)} style={[styles.filter, filter === item.key && styles.filterActive]}><Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>{item.label}</Text></Pressable>)}</ScrollView>

@@ -1,4 +1,4 @@
-import { getBudgetCategories } from '@/data/eventBudget';
+import { getChecklistItems } from '@/data/checklists';
 
 export type SellerStatus = 'กำลังเจรจา' | 'ยังไม่เริ่ม' | 'จ่ายมัดจำแล้ว';
 export type Seller = {
@@ -16,32 +16,31 @@ export type Seller = {
   expenseIds: string[];
 };
 
-const contactByCategory: Record<string, { phone: string; email: string }> = {
-  สถานที่: { phone: 'ยังไม่มีข้อมูลโทรศัพท์', email: 'ยังไม่มีข้อมูลอีเมล' },
-  อาหาร: { phone: 'ยังไม่มีข้อมูลโทรศัพท์', email: 'ยังไม่มีข้อมูลอีเมล' },
-  ตกแต่ง: { phone: 'ยังไม่มีข้อมูลโทรศัพท์', email: 'ยังไม่มีข้อมูลอีเมล' },
-  'อื่น ๆ': { phone: 'ยังไม่มีข้อมูลโทรศัพท์', email: 'ยังไม่มีข้อมูลอีเมล' },
-};
+export const getSellers = (eventId: string): Seller[] => {
+  const grouped = new Map<string, ReturnType<typeof getChecklistItems>>();
+  getChecklistItems(eventId).filter((item) => item.responsible.trim()).forEach((item) => {
+    const name = item.responsible.trim();
+    grouped.set(name, [...(grouped.get(name) ?? []), item]);
+  });
 
-export const getSellers = (eventId: string): Seller[] => getBudgetCategories(eventId).map((category) => {
-  const paid = category.expenses.filter((expense) => expense.paid).reduce((sum, expense) => sum + expense.amount, 0);
-  const hasPaid = paid > 0;
-  const hasBudget = category.planned > 0 || category.expenses.length > 0;
-  const contact = contactByCategory[category.name] ?? contactByCategory['อื่น ๆ'];
-  return {
-    id: `seller-${category.id}`,
-    eventId,
-    name: `seller ${category.name}`,
-    category: category.name,
-    price: category.planned,
-    paid,
-    status: hasPaid ? 'จ่ายมัดจำแล้ว' : hasBudget ? 'กำลังเจรจา' : 'ยังไม่เริ่ม',
-    phone: contact.phone,
-    email: contact.email,
-    note: category.note || 'ยังไม่มีหมายเหตุสำหรับ seller นี้',
-    checklistIds: category.expenses.filter((expense) => expense.id.startsWith('venue-') || expense.id.startsWith('food-') || expense.id.startsWith('decor-') || expense.id.startsWith('checklist-')).map((expense) => expense.id),
-    expenseIds: category.expenses.filter((expense) => expense.id.startsWith('budget-expense-')).map((expense) => expense.id),
-  };
-});
+  return Array.from(grouped, ([name, items]) => {
+    const price = items.reduce((sum, item) => sum + item.budget, 0);
+    const completed = items.filter((item) => item.done).length;
+    return {
+      id: `seller-${eventId}-${encodeURIComponent(name)}`,
+      eventId,
+      name,
+      category: Array.from(new Set(items.map((item) => item.category))).join(', '),
+      price,
+      paid: 0,
+      status: completed === items.length ? 'จ่ายมัดจำแล้ว' : price > 0 ? 'กำลังเจรจา' : 'ยังไม่เริ่ม',
+      phone: 'ยังไม่มีข้อมูลโทรศัพท์',
+      email: 'ยังไม่มีข้อมูลอีเมล',
+      note: items.map((item) => item.note).filter(Boolean).join('\n') || 'เชื่อมโยงจากรายการเช็กลิสต์',
+      checklistIds: items.map((item) => item.id),
+      expenseIds: [],
+    };
+  });
+};
 
 export const getSeller = (eventId: string, sellerId: string) => getSellers(eventId).find((seller) => seller.id === sellerId);

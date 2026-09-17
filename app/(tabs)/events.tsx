@@ -4,13 +4,13 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
-import { events, EventItem } from '@/data/events';
+import { events, EventItem, hydrateEvents } from '@/data/events';
 
 type Filter = 'all' | 'upcoming' | 'completed';
 export default function EventsScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [version, setVersion] = useState(0);
-  useFocusEffect(useCallback(() => { setVersion((value) => value + 1); }, []));
+  useFocusEffect(useCallback(() => { void hydrateEvents().then(() => setVersion((value) => value + 1)); }, []));
   void version;
   const filtered = useMemo(() => filter === 'all' ? events : events.filter((event) => event.status === filter), [filter]);
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}><Text style={styles.title}>งานของฉัน</Text><View style={styles.filters}><FilterButton label="ทั้งหมด" active={filter === 'all'} onPress={() => setFilter('all')} /><FilterButton label="กำลังจะถึง" active={filter === 'upcoming'} onPress={() => setFilter('upcoming')} /><FilterButton label="เสร็จแล้ว" active={filter === 'completed'} onPress={() => setFilter('completed')} /></View><View style={styles.list}>{filtered.map((event) => <EventCard key={event.id} event={event} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} />)}</View></ScrollView><Pressable accessibilityRole="button" accessibilityLabel="สร้างงานใหม่" onPress={() => router.push('/event/new')} style={styles.fab}><Text style={styles.fabText}>＋</Text></Pressable></SafeAreaView>;

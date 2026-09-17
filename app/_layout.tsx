@@ -23,9 +23,9 @@ import { hydrateGuests } from '@/data/guests';
 import { ensureProfile } from '@/lib/profile';
 
 const hydrateCloudData = async () => {
-  await hydrateEvents();
   await hydrateChecklistItems();
   await Promise.all([hydrateEventBudget(), hydrateGuests()]);
+  await hydrateEvents();
 };
 
 void SplashScreen.preventAutoHideAsync();

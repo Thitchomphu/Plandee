@@ -2,6 +2,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText as Text } from '@/components/AppText';
+import { ProgressDonut } from '@/components/ProgressDonut';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { events } from '@/data/events';
@@ -24,7 +25,7 @@ export default function EventBudgetScreen() {
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.headerTitle} numberOfLines={1}>{event.title}</Text><Pressable onPress={() => {}} hitSlop={8}><Text style={styles.more}>•••</Text></Pressable></View>
     <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
-    <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{checklistProgress}%</Text><Text style={styles.progressLabel}>เช็คลิสต์</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>ภาพรวมงบประมาณ</Text><Text style={styles.progressDescription}>ใช้ไปแล้ว <Text style={styles.strong}>{percent}%</Text> ของงบประมาณทั้งหมด</Text></View></View>
+    <View style={styles.progressRow}><View style={styles.progressRing}><ProgressDonut value={checklistProgress} label="เช็กลิสต์" /></View><View style={styles.progressText}><Text style={styles.progressTitle}>ภาพรวมงบประมาณ</Text><Text style={styles.progressDescription}>ใช้ไปแล้ว <Text style={styles.strong}>{percent}%</Text> ของงบประมาณทั้งหมด</Text></View></View>
     <View style={styles.stats}><Stat label="งบรวม" value={money(event.budget)} color={Theme.colors.text} background="#EEE7F9" /><Stat label="ใช้แล้ว" value={money(used)} color={Theme.colors.primary} background="#FDE3EA" /><Stat label="คงเหลือ" value={money(remaining)} color={Theme.colors.success} background="#DFF6EE" /></View>
     <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} /><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="แขก" onPress={() => router.push({ pathname: '/event/guests', params: { eventId: event.id } })} /><Tab label="seller" onPress={() => router.push({ pathname: '/event/sellers', params: { eventId: event.id } })} /></View>
     <View style={styles.subTabs}><Tab label="เช็คลิสต์" onPress={() => router.push({ pathname: '/event/checklist', params: { eventId: event.id } })} /><Tab label="งบประมาณ" active /></View>

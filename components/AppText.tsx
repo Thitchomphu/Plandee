@@ -7,6 +7,7 @@ export const AppText = forwardRef<NativeText, TextProps>(function AppText({ styl
   const weight = String(flattened?.fontWeight ?? '400');
   const isHeading = weight === 'bold' || Number(weight) >= 700;
   const fontFamily = flattened?.fontFamily ?? (isHeading ? Fonts.display : Fonts.sans);
+  const fontSize = typeof flattened?.fontSize === 'number' ? Math.round(flattened.fontSize * 1.1) : 15;
 
-  return <NativeText ref={ref} {...props} style={[{ fontFamily }, style]} />;
+  return <NativeText ref={ref} {...props} style={[flattened, { fontFamily, fontSize }]} />;
 });
