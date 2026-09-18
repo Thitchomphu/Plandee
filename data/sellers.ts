@@ -39,8 +39,8 @@ export const getSellers = (eventId: string): Seller[] => getBudgetCategories(eve
     phone: contact.phone,
     email: contact.email,
     note: category.note || 'ยังไม่มีหมายเหตุสำหรับ seller นี้',
-    checklistIds: category.expenses.filter((expense) => expense.id.startsWith('venue-') || expense.id.startsWith('food-') || expense.id.startsWith('decor-') || expense.id.startsWith('checklist-')).map((expense) => expense.id),
-    expenseIds: category.expenses.filter((expense) => expense.id.startsWith('budget-expense-')).map((expense) => expense.id),
+    checklistIds: category.expenses.filter((expense) => expense.checklistItemId).map((expense) => `checklist-${expense.checklistItemId}`),
+    expenseIds: category.expenses.filter((expense) => !expense.checklistItemId).map((expense) => expense.id),
   };
 });
 

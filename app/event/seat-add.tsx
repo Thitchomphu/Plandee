@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert } from '@/components/AppDialog';
 import { AppText as Text } from '@/components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { SelectMark } from '@/components/SelectMark';
 import { Theme } from '@/constants/theme';
 import { assignGuestToTable, getGuests, getTable, getTableGuests, getTables, Guest } from '@/data/guests';
 
@@ -25,7 +27,18 @@ export default function AddGuestToTableScreen() {
 }
 
 function GuestOption({ guest, selected, onPress }: { guest: Guest; selected: boolean; onPress: () => void }) {
-  return <Pressable onPress={onPress} style={styles.option}><Text style={[styles.checkbox, selected && styles.checkboxSelected]}>{selected ? '✓' : ''}</Text><View style={styles.optionText}><Text style={styles.name}>{guest.name}</Text><Text style={styles.group}>{guest.group}</Text></View></Pressable>;
+  return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={onPress} style={styles.option}><SelectMark selected={selected} size={26} /><View style={styles.optionText}><Text style={styles.name}>{guest.name}</Text><Text style={styles.group}>{guest.group}</Text></View></Pressable>;
 }
 
-const styles = StyleSheet.create({ overlay: { flex: 1, backgroundColor: 'rgba(43,34,51,0.45)' }, dismiss: { flex: 1 }, sheet: { backgroundColor: '#FFFBF3', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 30, gap: 14 }, notch: { width: 40, height: 4, borderRadius: 4, backgroundColor: Theme.colors.border, alignSelf: 'center', marginBottom: 4 }, title: { color: Theme.colors.text, fontSize: 20, fontWeight: '800' }, subtitle: { color: Theme.colors.muted, fontSize: 13 }, label: { color: Theme.colors.muted, fontSize: 13, fontWeight: '600' }, guestList: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 16, padding: 12, gap: 10, maxHeight: 220 }, option: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 38 }, checkbox: { width: 20, height: 20, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 5, textAlign: 'center', color: '#FFFFFF', backgroundColor: Theme.colors.surface }, checkboxSelected: { backgroundColor: Theme.colors.primary, borderColor: Theme.colors.primary }, optionText: { flex: 1, gap: 2 }, name: { color: Theme.colors.text, fontSize: 14 }, group: { color: Theme.colors.muted, fontSize: 12 }, empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20 } });
+const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(43,34,51,0.45)' }, dismiss: { flex: 1 },
+  sheet: { backgroundColor: Theme.colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: Theme.spacing.xl, paddingBottom: 36, gap: Theme.spacing.lg },
+  notch: { width: 40, height: 4, borderRadius: 4, backgroundColor: Theme.colors.border, alignSelf: 'center', marginBottom: 4 },
+  title: { color: Theme.colors.text, fontSize: 20, fontWeight: '800' },
+  subtitle: { color: Theme.colors.muted, fontSize: Theme.type.label },
+  label: { color: Theme.colors.muted, fontSize: Theme.type.label, fontWeight: '600' },
+  guestList: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 16, padding: 12, gap: 8, maxHeight: 240 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+  optionText: { flex: 1, gap: 2 }, name: { color: Theme.colors.text, fontSize: Theme.type.body }, group: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  empty: { color: Theme.colors.muted, textAlign: 'center', padding: 20, fontSize: Theme.type.body },
+});

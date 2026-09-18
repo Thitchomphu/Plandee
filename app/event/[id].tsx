@@ -1,27 +1,82 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { AppText as Text } from '@/components/AppText';
+import { useCallback, useState, type ComponentProps } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { events } from '@/data/events';
-import { getChecklistItems, getChecklistProgress } from '@/data/checklists';
+import { AppText as Text } from '@/components/AppText';
+import { EventPageHeader } from '@/components/EventPageHeader';
+import { EventScheduleCalendar } from '@/components/EventScheduleCalendar';
+import { EventVenueMap } from '@/components/EventVenueMap';
+import { EventTypeIcon } from '@/components/EventTypeIcon';
 import { Theme } from '@/constants/theme';
+import { getChecklistItems, getChecklistProgress, type ChecklistItem } from '@/data/checklists';
+import { events, type EventItem } from '@/data/events';
 
-type Tab = 'overview' | 'checklist' | 'guests' | 'vendors';
+type IconName = ComponentProps<typeof FontAwesome6>['name'];
+const money = (value: number) => `฿${new Intl.NumberFormat('th-TH', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`;
 
 export default function EventOverviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = events.find((item) => item.id === id) ?? events[0];
-  const [progress, setProgress] = useState(getChecklistProgress(event.id));
-  const [pending, setPending] = useState(getChecklistItems(event.id).filter((item) => !item.done).length);
-  useFocusEffect(useCallback(() => { setProgress(getChecklistProgress(event.id)); setPending(getChecklistItems(event.id).filter((item) => !item.done).length); }, [event.id, setPending, setProgress]));
-  const menu = () => Alert.alert('จัดการงาน', undefined, [{ text: 'แก้ไขงาน', onPress: () => router.push('/event/new') }, { text: 'ทำเครื่องหมายว่าเสร็จแล้ว' }, { text: 'ลบงาน', style: 'destructive' }, { text: 'ยกเลิก', style: 'cancel' }]);
-  const openTab = (tab: Tab) => { if (tab === 'checklist') return router.push({ pathname: '/event/checklist', params: { eventId: event.id } }); if (tab === 'guests') return router.push({ pathname: '/event/guests', params: { eventId: event.id } }); if (tab === 'vendors') return router.push({ pathname: '/event/sellers', params: { eventId: event.id } }); };
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}><View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹ งานของฉัน</Text></Pressable><Pressable accessibilityLabel="เมนูงาน" onPress={menu} hitSlop={8}><Text style={styles.more}>•••</Text></Pressable></View><View style={[styles.hero, { backgroundColor: event.banner }]}><Text style={styles.heroIcon}>{event.icon}</Text><Text style={[styles.days, { color: event.accent }]}>{event.status === 'completed' ? 'เสร็จแล้ว' : `อีก ${event.daysLeft} วัน`}</Text></View><Text style={styles.title}>{event.title}</Text><Text style={styles.meta}>{event.date} · {event.venue}</Text><View style={styles.tabs}>{(['overview', 'checklist', 'guests', 'vendors'] as Tab[]).map((tab) => <Pressable accessibilityRole="button" key={tab} onPress={() => openTab(tab)} style={[styles.tab, tab === 'overview' ? styles.tabActive : styles.tabInactive]}><Text style={[styles.tabText, tab === 'overview' ? styles.tabTextActive : styles.tabTextInactive]}>{tab === 'overview' ? 'ภาพรวม' : tab === 'checklist' ? 'เช็คลิสต์' : tab === 'guests' ? 'แขก' : 'seller'}</Text></Pressable>)}</View><Overview event={event} progress={progress} pending={pending} /></ScrollView></SafeAreaView>;
+  const event = events.find((item) => item.id === id);
+  const eventId = event?.id ?? '';
+  const [progress, setProgress] = useState(() => getChecklistProgress(eventId));
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(() => getChecklistItems(eventId));
+  const pendingCount = checklist.filter((item) => !item.done).length;
+
+  useFocusEffect(useCallback(() => {
+    setProgress(getChecklistProgress(eventId));
+    setChecklist(getChecklistItems(eventId));
+  }, [eventId]));
+
+  if (!event) return <SafeAreaView style={styles.safe}><View style={styles.missing}><Text style={styles.missingTitle}>ไม่พบอีเวนต์นี้</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/events')} style={styles.missingButton}><Text style={styles.missingButtonText}>กลับไปงานของฉัน</Text></Pressable></View></SafeAreaView>;
+
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <EventPageHeader title="ภาพรวมงาน" backLabel="ย้อนกลับ" onBack={() => router.canGoBack() ? router.back() : router.replace('/events')} />
+
+    <EventIdentity event={event} />
+
+    <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.sectionTitle}>จัดการงานนี้</Text><Text style={styles.sectionHint}>เปิดดูรายละเอียดแต่ละด้าน</Text></View>
+      <View style={styles.summaryGrid}>
+        <SummaryCard icon="list-check" label="เช็กลิสต์" value={`${progress}% เตรียมแล้ว`} detail={`${pendingCount} รายการค้าง`} color={Theme.colors.primary} background={Theme.colors.primarySoft} onPress={() => router.replace({ pathname: '/event/checklist', params: { eventId: event.id } })} />
+        <SummaryCard icon="users" label="รายชื่อแขก" value={`${event.guests} คน`} color={Theme.colors.lavenderText} background={Theme.colors.lavender} onPress={() => router.replace({ pathname: '/event/guests', params: { eventId: event.id } })} />
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel={`ดูงบงาน ${money(event.budget)}`} onPress={() => router.replace({ pathname: '/event/budget', params: { eventId: event.id } })} style={({ pressed }) => [styles.budgetLink, pressed && styles.pressed]}>
+        <View style={styles.budgetIcon}><FontAwesome6 name="coins" size={18} color={Theme.colors.success} solid /></View>
+        <View style={styles.budgetCopy}><Text style={styles.budgetTitle}>งบงาน</Text><Text style={styles.budgetValue}>{money(event.budget)} ที่ตั้งไว้</Text></View>
+        <FontAwesome6 name="arrow-right" size={14} color={Theme.colors.success} />
+      </Pressable>
+    </View>
+    <EventScheduleCalendar eventDate={event.eventDate} items={checklist} />
+    <EventVenueMap venue={event.venue} />
+  </ScrollView></SafeAreaView>;
 }
 
-function Overview({ event, progress, pending }: { event: (typeof events)[number]; progress: number; pending: number }) { return <View style={styles.sectionGap}><View style={styles.progressCard}><View style={styles.row}><Text style={styles.cardTitle}>ความคืบหน้าของงาน</Text><Text style={styles.percent}>{progress}%</Text></View><View style={styles.track}><View style={[styles.progress, { width: `${progress}%`, backgroundColor: event.accent }]} /></View></View><View style={styles.stats}><Stat icon="📍" label="สถานที่" value={event.venue} /><Stat icon="💰" label="งบประมาณ" value={`฿${event.budget.toLocaleString()}`} /><Stat icon="👥" label="แขก" value={`${event.guests} คน`} /><Stat icon="⏳" label="งานค้าง" value={`${pending} รายการ`} /></View><Text style={styles.sectionTitle}>งานใกล้กำหนด</Text><Task icon="🛠️" title="ยืนยันรายละเอียดกับ seller" meta="กำหนดภายใน 3 วัน" /><Task icon="📋" title="ตรวจสอบเช็คลิสต์ที่ยังค้าง" meta={`มี ${pending} รายการรอดำเนินการ`} /></View>; }
-function Stat({ icon, label, value }: { icon: string; label: string; value: string }) { return <View style={styles.stat}><Text style={styles.statIcon}>{icon}</Text><Text style={styles.statLabel}>{label}</Text><Text style={styles.statValue} numberOfLines={1}>{value}</Text></View>; }
-function Task({ icon, title, meta }: { icon: string; title: string; meta: string }) { return <View style={styles.task}><Text style={styles.taskIcon}>{icon}</Text><View style={{ flex: 1 }}><Text style={styles.taskTitle}>{title}</Text><Text style={styles.taskMeta}>{meta}</Text></View><Text style={styles.chevron}>›</Text></View>; }
+function EventIdentity({ event }: { event: EventItem }) {
+  const today = new Date();
+  const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const status = event.status === 'completed' ? 'เสร็จแล้ว' : event.eventDate < localDate ? 'เลยวันงานแล้ว' : event.daysLeft === 0 ? 'วันนี้' : `อีก ${event.daysLeft} วัน`;
+  return <View style={styles.identity}>
+    <View style={styles.identityTop}><View style={styles.identityIcon}><EventTypeIcon kind={event.kind} size={23} color={event.accent} /></View><View style={styles.identityCopy}><Text style={styles.identityKind}>{event.kind}</Text><Text style={styles.identityTitle}>{event.title}</Text></View></View>
+    <View style={styles.identityMeta}><FontAwesome6 name="calendar-days" size={13} color={Theme.colors.muted} /><Text style={styles.identityMetaText}>{event.date}</Text><View style={styles.statusPill}><Text style={styles.statusText}>{status}</Text></View></View>
+    <View style={styles.identityMeta}><FontAwesome6 name="location-dot" size={13} color={Theme.colors.muted} solid /><Text style={styles.identityMetaText} numberOfLines={1}>{event.venue}</Text></View>
+  </View>;
+}
 
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: 20, paddingBottom: 40, gap: 12 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }, back: { color: Theme.colors.primary, fontSize: 14, fontWeight: '600' }, more: { color: Theme.colors.text, fontSize: 18, letterSpacing: 2 }, hero: { minHeight: 126, borderRadius: 22, alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }, heroIcon: { fontSize: 42 }, days: { fontSize: 14, fontWeight: '700' }, title: { color: Theme.colors.text, fontSize: 24, fontWeight: '800', marginTop: 4 }, meta: { color: Theme.colors.muted, fontSize: 13 }, tabs: { flexDirection: 'row', gap: 8, marginTop: 8 }, tab: { minHeight: 40, paddingHorizontal: 15, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, tabActive: { backgroundColor: Theme.colors.text }, tabInactive: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border }, tabText: { fontSize: 12, fontWeight: '600' }, tabTextActive: { color: '#FFFFFF' }, tabTextInactive: { color: Theme.colors.muted }, sectionGap: { gap: 12 }, progressCard: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 16, gap: 12 }, row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, cardTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, percent: { color: Theme.colors.primary, fontSize: 14, fontWeight: '700' }, track: { height: 8, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' }, progress: { height: '100%', borderRadius: 100 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, stat: { width: '48%', backgroundColor: Theme.colors.surface, borderRadius: 16, padding: 12, gap: 4 }, statIcon: { fontSize: 18 }, statLabel: { color: Theme.colors.muted, fontSize: 11 }, statValue: { color: Theme.colors.text, fontSize: 13, fontWeight: '700' }, sectionTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: '700', marginTop: 8 }, task: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 16, padding: 14 }, taskIcon: { fontSize: 20 }, taskTitle: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' }, taskMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 3 }, chevron: { color: Theme.colors.muted, fontSize: 25 } });
+function SummaryCard({ icon, label, value, detail, color, background, onPress }: { icon: IconName; label: string; value: string; detail?: string; color: string; background: string; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${label} ${value}${detail ? ` ${detail}` : ''}`} onPress={onPress} style={({ pressed }) => [styles.summaryCard, { backgroundColor: background }, pressed && styles.pressed]}><FontAwesome6 name={icon} size={17} color={color} solid /><Text style={styles.summaryLabel}>{label}</Text><Text style={[styles.summaryValue, { color }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>{detail ? <Text style={styles.summaryDetail}>{detail}</Text> : null}</Pressable>;
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { paddingHorizontal: Theme.spacing.xl, paddingTop: 12, paddingBottom: 48, gap: Theme.spacing.xl }, pressed: { opacity: 0.82 },
+  identity: { borderRadius: 22, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, padding: 18, gap: 12 },
+  identityTop: { flexDirection: 'row', alignItems: 'center', gap: 12 }, identityIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft }, identityCopy: { flex: 1, gap: 2 },
+  identityKind: { color: Theme.colors.primary, fontSize: Theme.type.micro, fontWeight: '700' }, identityTitle: { color: Theme.colors.text, fontSize: 22, lineHeight: 30, fontWeight: '800' },
+  identityMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 }, identityMetaText: { color: Theme.colors.muted, fontSize: Theme.type.caption, flexShrink: 1 },
+  statusPill: { borderRadius: 100, backgroundColor: Theme.colors.primarySoft, paddingHorizontal: 10, paddingVertical: 5, marginLeft: 'auto' }, statusText: { color: Theme.colors.primary, fontSize: Theme.type.micro, fontWeight: '700' },
+  section: { gap: 12 }, sectionHeading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }, sectionTitle: { color: Theme.colors.text, fontSize: 19, fontWeight: '800' }, sectionHint: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  summaryGrid: { flexDirection: 'row', gap: 10 }, summaryCard: { flex: 1, minWidth: 0, minHeight: 118, borderRadius: 20, padding: 15, gap: 6, justifyContent: 'space-between' }, summaryLabel: { color: Theme.colors.muted, fontSize: Theme.type.caption }, summaryValue: { fontSize: 18, fontWeight: '800' }, summaryDetail: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  budgetLink: { minHeight: 74, borderRadius: 18, backgroundColor: Theme.colors.mint, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  budgetIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  budgetCopy: { flex: 1, gap: 2 }, budgetTitle: { color: Theme.colors.text, fontSize: Theme.type.body, fontWeight: '700' }, budgetValue: { color: Theme.colors.success, fontSize: Theme.type.caption },
+  missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24 }, missingTitle: { color: Theme.colors.text, fontSize: 20, fontWeight: '700' }, missingButton: { backgroundColor: Theme.colors.primary, minHeight: 48, borderRadius: 14, paddingHorizontal: 18, justifyContent: 'center' }, missingButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+});

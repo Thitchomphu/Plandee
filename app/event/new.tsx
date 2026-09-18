@@ -1,12 +1,15 @@
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppText as Text } from '@/components/AppText';
+import { EventPageHeader } from '@/components/EventPageHeader';
 import { CurrencyInput, currencyValue } from '@/components/CurrencyInput';
+import { DateInput } from '@/components/DateInput';
+import { VenueInput } from '@/components/VenueInput';
+import { SelectMark } from '@/components/SelectMark';
 import { Theme } from '@/constants/theme';
 import { ChecklistCategory } from '@/data/checklists';
 import { createEventWithChecklist } from '@/data/events';
@@ -20,59 +23,78 @@ const templatesByType: Record<string, Template[]> = {
   งานเปิดตัว: [{ id: 'launch-venue', title: 'ยืนยันสถานที่เปิดตัว', category: 'สถานที่' }, { id: 'launch-materials', title: 'เตรียมสื่อประชาสัมพันธ์', category: 'อื่น ๆ' }, { id: 'launch-decor', title: 'จัดเตรียมเวทีและตกแต่ง', category: 'ตกแต่ง' }],
 };
 
-const dateForDatabase = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-const dateForDisplay = (date: Date) => new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
-
 export default function NewEventScreen() {
   const [title, setTitle] = useState('');
   const [venue, setVenue] = useState('');
   const [type, setType] = useState(eventTypes[0]);
-  const [eventDate, setEventDate] = useState<Date | null>(null);
-  const [showPicker, setShowPicker] = useState(false);
+  const [eventDate, setEventDate] = useState('');
   const [budget, setBudget] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [savedWithoutReload, setSavedWithoutReload] = useState(false);
   const templates = useMemo(() => templatesByType[type], [type]);
   const [selected, setSelected] = useState<string[]>(templates.map((item) => item.id));
 
   const chooseType = (value: string) => { setType(value); setSelected(templatesByType[value].map((item) => item.id)); };
   const toggle = (id: string) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  const selectDate = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (Platform.OS === 'android') setShowPicker(false);
-    if (selectedDate) setEventDate(selectedDate);
-  };
   const submit = async () => {
+    if (submitting || savedWithoutReload) return;
     const parsedBudget = currencyValue(budget);
     if (!title.trim() || !venue.trim() || !eventDate || !parsedBudget || parsedBudget <= 0) {
-      Alert.alert('ข้อมูลไม่ครบ', 'กรุณากรอกชื่องาน สถานที่ เลือกวันที่ และงบประมาณเป็นตัวเลขบวก');
+      setSubmitError('กรุณากรอกชื่องาน สถานที่ เลือกวันที่ และงบประมาณเป็นตัวเลขบวก');
       return;
     }
     setSubmitting(true);
-    const eventDateValue = dateForDatabase(eventDate);
-    const result = await createEventWithChecklist({ title: title.trim(), kind: type, eventDate: eventDateValue, venue: venue.trim(), budget: parsedBudget, checklist: templates.filter((item) => selected.includes(item.id)).map((item) => ({ title: item.title, category: item.category, dueDate: eventDateValue })) });
-    setSubmitting(false);
-    if (result.error || !result.event) {
-      Alert.alert('สร้างงานไม่สำเร็จ', result.error?.message ?? 'กรุณาลองใหม่อีกครั้ง');
-      return;
+    setSubmitError('');
+    const eventDateValue = eventDate;
+    try {
+      const result = await createEventWithChecklist({ title: title.trim(), kind: type, eventDate: eventDateValue, venue: venue.trim(), budget: parsedBudget, checklist: templates.filter((item) => selected.includes(item.id)).map((item) => ({ title: item.title, category: item.category, dueDate: eventDateValue })) });
+      if (result.error) { setSubmitError(`บันทึกไม่สำเร็จ: ${result.error.message}`); return; }
+      if (!result.event && result.saved) {
+        setSavedWithoutReload(true);
+        setSubmitError('บันทึกงานใน Supabase แล้ว แต่แอปโหลดงานกลับมาไม่สำเร็จ อย่ากดสร้างซ้ำ กรุณาไปที่หน้างานของฉันแล้วลองโหลดใหม่');
+        return;
+      }
+      if (!result.event) { setSubmitError('ไม่สามารถยืนยันการบันทึกงานได้ กรุณาลองใหม่อีกครั้ง'); return; }
+      router.replace({ pathname: '/event/[id]', params: { id: result.event.id } });
+    } catch {
+      setSubmitError('เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบรายการงานก่อนกดสร้างซ้ำ');
+    } finally {
+      setSubmitting(false);
     }
-    router.replace({ pathname: '/event/[id]', params: { id: result.event.id } });
   };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.header}><Text style={styles.title}>สร้างงาน</Text><Pressable onPress={() => router.back()}><Text style={styles.cancel}>ยกเลิก</Text></Pressable></View>
+    <EventPageHeader title="สร้างงาน" backLabel="ยกเลิกการสร้างงาน" onBack={() => router.back()} />
     <View style={styles.tip}><Text style={styles.tipIcon}>💡</Text><View style={styles.tipText}><Text style={styles.tipTitle}>เริ่มต้นด้วยเช็กลิสต์ที่เหมาะกับงาน</Text><Text style={styles.tipBody}>เลือกประเภทงาน แล้วเลือกเฉพาะรายการที่ต้องการใช้ได้ทันที</Text></View></View>
     <AppInput label="ชื่องาน" value={title} onChangeText={setTitle} placeholder="กรอกชื่องาน" />
-    <AppInput label="สถานที่จัดงาน" value={venue} onChangeText={setVenue} placeholder="เช่น โรงแรม หรือสถานที่จัดงาน" />
+    <VenueInput value={venue} onChangeText={setVenue} />
     <Text style={styles.label}>ประเภทงาน</Text><View style={styles.types}>{eventTypes.map((item) => <Pressable key={item} onPress={() => chooseType(item)} style={[styles.type, item === type && styles.typeActive]}><Text style={[styles.typeText, item === type && styles.typeTextActive]}>{item}</Text></Pressable>)}</View>
-    <Text style={styles.label}>วันที่จัดงาน</Text><Pressable accessibilityRole="button" accessibilityLabel="เลือกวันที่จัดงาน" onPress={() => setShowPicker(true)} style={styles.dateField}><Text style={[styles.dateValue, !eventDate && styles.placeholder]}>{eventDate ? dateForDisplay(eventDate) : 'เลือกวันที่จากปฏิทิน'}</Text><Text style={styles.calendar}>📅</Text></Pressable>
-    {showPicker ? <DateTimePicker value={eventDate ?? new Date()} mode="date" display={Platform.OS === 'ios' ? 'spinner' : 'default'} onChange={selectDate} minimumDate={new Date()} /> : null}
-    {showPicker && Platform.OS === 'ios' ? <AppButton title="ยืนยันวันที่" onPress={() => setShowPicker(false)} variant="outline" /> : null}
+    <DateInput label="วันที่จัดงาน" value={eventDate} onChange={setEventDate} minimumDate={new Date()} />
     <CurrencyInput label="งบประมาณ (บาท)" value={budget} onChangeText={setBudget} placeholder="เช่น 150,000" />
     <View style={styles.checklistHeader}><Text style={styles.label}>เช็กลิสต์เบื้องต้น</Text><Text style={styles.selected}>{selected.length}/{templates.length} รายการ</Text></View>
-    <View style={styles.checklist}>{templates.map((item) => <Pressable key={item.id} onPress={() => toggle(item.id)} style={styles.checkItem}><Text style={[styles.checkbox, selected.includes(item.id) && styles.checkboxActive]}>{selected.includes(item.id) ? '✓' : ''}</Text><View style={styles.checkText}><Text style={styles.checkTitle}>{item.title}</Text><Text style={styles.checkMeta}>{item.category}</Text></View></Pressable>)}</View>
-    <AppButton title={submitting ? 'กำลังสร้างงาน...' : 'สร้างงาน'} onPress={submit} disabled={submitting} />
-    <AppButton title="ยกเลิก" onPress={() => router.back()} variant="outline" />
+    <View style={styles.checklist}>{templates.map((item) => <Pressable key={item.id} accessibilityRole="checkbox" accessibilityState={{ checked: selected.includes(item.id) }} onPress={() => toggle(item.id)} style={styles.checkItem}><SelectMark selected={selected.includes(item.id)} size={26} /><View style={styles.checkText}><Text style={styles.checkTitle}>{item.title}</Text><Text style={styles.checkMeta}>{item.category}</Text></View></Pressable>)}</View>
+    {submitError ? <Text accessibilityRole="alert" style={{ color: Theme.colors.primary, backgroundColor: Theme.colors.primarySoft, borderRadius: 12, padding: 14, fontSize: 14 }}>{submitError}</Text> : null}
+    <AppButton title={submitting ? 'กำลังสร้างงาน...' : 'สร้างงาน'} onPress={submit} disabled={submitting || savedWithoutReload} />
+    {savedWithoutReload ? <AppButton title="ไปที่งานของฉัน" variant="outline" onPress={() => router.replace('/events')} /> : null}
   </ScrollView></SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: 24, paddingBottom: 40, gap: 14 }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 42 }, title: { color: Theme.colors.text, fontSize: 26, fontWeight: '800' }, cancel: { color: Theme.colors.primary, fontSize: 14, fontWeight: '700' }, tip: { flexDirection: 'row', gap: 12, padding: 16, backgroundColor: '#FDE3EA', borderWidth: 1, borderColor: Theme.colors.primary, borderRadius: 20 }, tipIcon: { fontSize: 22 }, tipText: { flex: 1, gap: 4 }, tipTitle: { color: Theme.colors.primary, fontSize: 14, fontWeight: '700' }, tipBody: { color: Theme.colors.text, fontSize: 12, lineHeight: 18 }, label: { color: Theme.colors.muted, fontSize: 13, fontWeight: '600' }, types: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, type: { borderWidth: 1, borderColor: Theme.colors.border, backgroundColor: Theme.colors.surface, borderRadius: 100, paddingHorizontal: 14, paddingVertical: 9 }, typeActive: { backgroundColor: Theme.colors.primary, borderColor: Theme.colors.primary }, typeText: { color: Theme.colors.muted, fontSize: 13 }, typeTextActive: { color: '#FFFFFF', fontWeight: '700' }, dateField: { minHeight: 52, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: Theme.colors.border, backgroundColor: Theme.colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, dateValue: { color: Theme.colors.text, fontSize: 14 }, placeholder: { color: Theme.colors.placeholder }, calendar: { fontSize: 18 }, checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }, selected: { color: Theme.colors.primary, fontSize: 12, fontWeight: '700' }, checklist: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 12, gap: 10 }, checkItem: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }, checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 6, textAlign: 'center', color: '#FFFFFF', backgroundColor: Theme.colors.surface }, checkboxActive: { backgroundColor: Theme.colors.primary, borderColor: Theme.colors.primary }, checkText: { flex: 1, gap: 2 }, checkTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '600' }, checkMeta: { color: Theme.colors.muted, fontSize: 11 } });
+  safe: { flex: 1, backgroundColor: Theme.colors.background },
+  content: { padding: Theme.spacing.xl, paddingBottom: 40, gap: Theme.spacing.lg },
+  tip: { flexDirection: 'row', gap: 12, padding: 16, backgroundColor: Theme.colors.primarySoft, borderWidth: 1, borderColor: Theme.colors.primary, borderRadius: 20 },
+  tipIcon: { fontSize: 22 }, tipText: { flex: 1, gap: 6 },
+  tipTitle: { color: Theme.colors.primary, fontSize: Theme.type.body, fontWeight: '700' },
+  tipBody: { color: Theme.colors.text, fontSize: Theme.type.label, lineHeight: 21 },
+  label: { color: Theme.colors.muted, fontSize: Theme.type.label, fontWeight: '600' },
+  types: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  type: { minHeight: 44, borderWidth: 1, borderColor: Theme.colors.border, backgroundColor: Theme.colors.surface, borderRadius: 100, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  typeActive: { backgroundColor: Theme.colors.primary, borderColor: Theme.colors.primary },
+  typeText: { color: Theme.colors.muted, fontSize: Theme.type.label }, typeTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  selected: { color: Theme.colors.primary, fontSize: Theme.type.caption, fontWeight: '700' },
+  checklist: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 18, padding: 12, gap: 10 },
+  checkItem: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+  checkText: { flex: 1, gap: 2 }, checkTitle: { color: Theme.colors.text, fontSize: Theme.type.body, fontWeight: '600' }, checkMeta: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+});

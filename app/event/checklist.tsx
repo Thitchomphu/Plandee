@@ -6,6 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
 import { ChecklistItem, getChecklistItems, updateChecklistItem } from '@/data/checklists';
 import { events } from '@/data/events';
+import { EventSectionNav } from '@/components/EventSectionNav';
+import { EventContextBanner, EventPageHeader } from '@/components/EventPageHeader';
+import { ProgressRing } from '@/components/ProgressRing';
+import { SelectMark } from '@/components/SelectMark';
+import { dueStatus } from '@/data/taskDue';
 
 export default function EventChecklistScreen() {
   const { eventId = events[0].id } = useLocalSearchParams<{ eventId?: string }>();
@@ -15,27 +20,66 @@ export default function EventChecklistScreen() {
   const done = items.filter((item) => item.done).length;
   const progress = items.length ? Math.round((done / items.length) * 100) : 0;
   const grouped = useMemo(() => Array.from(new Set(items.map((item) => item.category))), [items]);
+  const urgentCount = items.filter((item) => dueStatus(item) !== null).length;
   const toggle = async (id: string) => {
     const item = items.find((value) => value.id === id);
     if (!item) return;
     const { error } = await updateChecklistItem(id, { done: !item.done });
     if (!error) setItems(getChecklistItems(event.id));
   };
-  const openTab = (tab: 'overview' | 'checklist' | 'guests') => { if (tab === 'overview') router.push({ pathname: '/event/[id]', params: { id: event.id } }); if (tab === 'guests') router.push({ pathname: '/event/guests', params: { eventId: event.id } }); };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-    <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={8}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.headerTitle} numberOfLines={1}>{event.title}</Text><Pressable onPress={() => {}} hitSlop={8}><Text style={styles.more}>•••</Text></Pressable></View>
-    <View style={[styles.banner, { backgroundColor: event.banner }]}><View><Text style={[styles.date, { color: event.accent }]}>{event.date}</Text><Text style={styles.venue}>{event.venue}</Text></View><Text style={styles.eventIcon}>{event.icon}</Text></View>
-    <View style={styles.progressRow}><View style={styles.progressRing}><Text style={styles.progressValue}>{progress}%</Text><Text style={styles.progressLabel}>เสร็จแล้ว</Text></View><View style={styles.progressText}><Text style={styles.progressTitle}>เตรียมงานไปแล้ว {progress}%</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} งาน</Text> ก่อนถึงวันจริง</Text></View></View>
-    <View style={styles.stats}><Stat value={items.length} label="งานทั้งหมด" color="#1F8467" background="#DFF6EE" /><Stat value={done} label="งานเสร็จแล้ว" color="#6B4FA8" background="#EEE7F9" /><Stat value={items.length - done} label="งานค้างอยู่" color="#966016" background="#FFF1DA" /></View>
-    <View style={styles.tabs}><Tab label="ภาพรวม" onPress={() => openTab('overview')} /><Tab label="เช็คลิสต์" active /><Tab label="แขก" onPress={() => openTab('guests')} /><Tab label="seller" onPress={() => router.push({ pathname: '/event/sellers', params: { eventId: event.id } })} /></View>
-    <View style={styles.subTabs}><Tab label={`เช็คลิสต์ (${done}/${items.length})`} active /><Tab label="งบประมาณ" onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id } })} /></View>
-    {grouped.map((category) => <View key={category} style={styles.group}><View style={styles.groupHeader}><Text style={styles.category}>{category}</Text><Text style={styles.categoryCount}>({items.filter((item) => item.category === category && item.done).length}/{items.filter((item) => item.category === category).length} เสร็จ)</Text></View>{items.filter((item) => item.category === category).map((item) => <ChecklistRow key={item.id} item={item} onToggle={() => toggle(item.id)} onEdit={() => router.push({ pathname: '/event/checklist-edit', params: { id: item.id } })} />)}</View>)}
+    <EventPageHeader title="เช็กลิสต์" backLabel="กลับภาพรวมงาน" onBack={() => router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
+    <EventContextBanner event={event} />
+    <View style={styles.progressRow}><ProgressRing progress={progress} /><View style={styles.progressText}><Text style={styles.progressTitle}>เช็กลิสต์ {done}/{items.length} รายการเสร็จแล้ว</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} รายการ</Text> ที่ต้องเตรียม</Text></View></View>
+    {urgentCount > 0 ? <View style={styles.dueBanner}><Text style={styles.dueBannerTitle}>มี {urgentCount} งานที่ต้องติดตาม</Text><Text style={styles.dueBannerText}>นับงานที่เกินกำหนดหรือครบกำหนดภายใน 3 วัน โดยไม่นับงานที่ทำเสร็จแล้ว</Text></View> : null}
+    <EventSectionNav eventId={event.id} active="checklist" />
+    {!items.length ? <Text style={{ color: Theme.colors.muted, textAlign: 'center', padding: 24, fontSize: 14 }}>ยังไม่มีรายการเตรียมงาน กดปุ่มด้านล่างเพื่อเพิ่มรายการแรก</Text> : null}
+    {grouped.map((category) => <View key={category} style={styles.group}><View style={styles.groupHeader}><Text style={styles.category}>{category}</Text><Text style={styles.categoryCount}>({items.filter((item) => item.category === category && item.done).length}/{items.filter((item) => item.category === category).length} เสร็จ)</Text></View>{items.filter((item) => item.category === category).sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (a.dueDate || '9999').localeCompare(b.dueDate || '9999')).map((item) => <ChecklistRow key={item.id} item={item} onToggle={() => toggle(item.id)} onEdit={() => router.push({ pathname: '/event/checklist-edit', params: { id: item.id } })} />)}</View>)}
   </ScrollView><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/event/checklist-new', params: { eventId: event.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มรายการเช็คลิสต์</Text></Pressable></SafeAreaView>;
 }
 
-function Tab({ label, active = false, onPress }: { label: string; active?: boolean; onPress?: () => void }) { return <Pressable onPress={onPress} disabled={!onPress} style={[styles.tab, active ? styles.activeTab : styles.inactiveTab]}><Text style={[styles.tabText, active ? styles.activeTabText : styles.inactiveTabText]}>{label}</Text></Pressable>; }
-function Stat({ value, label, color, background }: { value: number; label: string; color: string; background: string }) { return <View style={[styles.stat, { backgroundColor: background }]}><Text style={[styles.statValue, { color }]}>{value} งาน</Text><Text style={styles.statLabel}>{label}</Text></View>; }
-function ChecklistRow({ item, onToggle, onEdit }: { item: ChecklistItem; onToggle: () => void; onEdit: () => void }) { return <View style={styles.row}><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.done }} onPress={onToggle} style={[styles.checkbox, item.done && styles.checked]}><Text style={styles.check}>{item.done ? '✓' : ''}</Text></Pressable><Pressable onPress={onEdit} style={styles.itemBody}><Text style={[styles.itemTitle, item.done && styles.done]}>{item.title}</Text><Text style={styles.itemMeta}>กำหนดส่ง: {item.dueDate}{item.budget ? ` · ฿${item.budget.toLocaleString()}` : ''}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="แก้ไขรายการ" onPress={onEdit} style={styles.edit} hitSlop={6}><Text style={styles.editIcon}>✎</Text></Pressable></View>; }
+function ChecklistRow({ item, onToggle, onEdit }: { item: ChecklistItem; onToggle: () => void; onEdit: () => void }) {
+  const due = dueStatus(item);
+  return <View style={styles.row}>
+    <Pressable accessibilityRole="checkbox" accessibilityLabel={item.title} accessibilityState={{ checked: item.done }} onPress={onToggle} style={styles.checkTouch}><SelectMark selected={item.done} /></Pressable>
+    <Pressable onPress={onEdit} style={styles.itemBody}>
+      <View style={styles.titleLine}><Text style={[styles.itemTitle, item.done && styles.done]}>{item.title}</Text>{due ? <Text style={[styles.duePill, due.tone === 'overdue' ? styles.overdue : styles.soon]}>{due.label}</Text> : null}</View>
+      <Text style={styles.itemMeta}>{item.dueDate ? `กำหนดส่ง: ${item.dueDate}` : 'ยังไม่กำหนดวัน'}{item.budget ? ` · ฿${item.budget.toLocaleString()}` : ''}</Text>
+      {item.assigneeName ? <Text style={styles.assignee}>ผู้รับผิดชอบ: {item.assigneeName}</Text> : null}
+    </Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="แก้ไขรายการ" onPress={onEdit} style={styles.edit} hitSlop={6}><Text style={styles.editIcon}>✎</Text></Pressable>
+  </View>;
+}
 
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { paddingHorizontal: 22, paddingTop: 10, paddingBottom: 100, gap: 16 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 38 }, back: { color: Theme.colors.text, fontSize: 30, lineHeight: 32 }, headerTitle: { flex: 1, textAlign: 'center', color: Theme.colors.text, fontSize: 16, fontWeight: '800' }, more: { color: Theme.colors.text, fontSize: 18, letterSpacing: 2 }, banner: { minHeight: 88, borderRadius: 22, padding: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, date: { fontSize: 14, fontWeight: '700' }, venue: { color: Theme.colors.muted, fontSize: 12, marginTop: 5 }, eventIcon: { fontSize: 40 }, progressRow: { flexDirection: 'row', alignItems: 'center', gap: 18 }, progressRing: { width: 86, height: 86, borderRadius: 43, borderWidth: 8, borderColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' }, progressValue: { color: Theme.colors.text, fontSize: 17, fontWeight: '800' }, progressLabel: { color: Theme.colors.muted, fontSize: 9, marginTop: 1 }, progressText: { flex: 1, gap: 5 }, progressTitle: { color: Theme.colors.text, fontSize: 14, fontWeight: '700' }, progressDescription: { color: Theme.colors.muted, fontSize: 13 }, strong: { color: Theme.colors.text, fontWeight: '700' }, stats: { flexDirection: 'row', gap: 8 }, stat: { flex: 1, padding: 12, borderRadius: 18, gap: 4 }, statValue: { fontSize: 14, fontWeight: '700' }, statLabel: { color: Theme.colors.muted, fontSize: 10 }, tabs: { flexDirection: 'row', gap: 8 }, subTabs: { flexDirection: 'row', gap: 8, paddingTop: 2 }, tab: { minHeight: 38, paddingHorizontal: 15, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, activeTab: { backgroundColor: Theme.colors.text }, inactiveTab: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border }, tabText: { fontSize: 12, fontWeight: '600' }, activeTabText: { color: '#FFFFFF' }, inactiveTabText: { color: Theme.colors.muted }, group: { gap: 8 }, groupHeader: { flexDirection: 'row', alignItems: 'baseline', gap: 6, paddingTop: 4 }, category: { color: Theme.colors.text, fontSize: 15, fontWeight: '800' }, categoryCount: { color: Theme.colors.muted, fontSize: 11 }, row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 20 }, checkbox: { width: 24, height: 24, borderWidth: 1.5, borderColor: Theme.colors.primary, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }, checked: { backgroundColor: Theme.colors.primary }, check: { color: '#FFFFFF', fontWeight: '800' }, itemBody: { flex: 1, gap: 3 }, itemTitle: { color: Theme.colors.text, fontSize: 13, fontWeight: '600' }, itemMeta: { color: Theme.colors.muted, fontSize: 11 }, done: { color: Theme.colors.muted, textDecorationLine: 'line-through' }, edit: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }, editIcon: { color: Theme.colors.muted, fontSize: 18 }, add: { position: 'absolute', left: 20, right: 20, bottom: 20, minHeight: 52, borderRadius: 18, backgroundColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' }, addText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' } });
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Theme.colors.background },
+  content: { paddingHorizontal: Theme.spacing.xl, paddingTop: 12, paddingBottom: 100, gap: Theme.spacing.lg },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  progressText: { flex: 1, gap: 6 },
+  progressTitle: { color: Theme.colors.text, fontSize: 16, fontWeight: '700' },
+  progressDescription: { color: Theme.colors.muted, fontSize: Theme.type.label },
+  dueBanner: { backgroundColor: Theme.colors.warningSoft, borderRadius: 16, padding: 14, gap: 3 },
+  dueBannerTitle: { color: Theme.colors.warningText, fontSize: Theme.type.body, fontWeight: '700' },
+  dueBannerText: { color: Theme.colors.warningText, fontSize: Theme.type.caption },
+  strong: { color: Theme.colors.text, fontWeight: '700' },
+  group: { gap: 8 },
+  groupHeader: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: 6, paddingTop: 4 },
+  category: { color: Theme.colors.text, fontSize: 17, fontWeight: '800' },
+  categoryCount: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  row: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 20 },
+  checkTouch: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  itemBody: { flex: 1, gap: 3, justifyContent: 'center', minHeight: 44 },
+  titleLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  itemTitle: { color: Theme.colors.text, fontSize: Theme.type.body, fontWeight: '600' },
+  itemMeta: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  assignee: { color: Theme.colors.muted, fontSize: Theme.type.caption },
+  duePill: { overflow: 'hidden', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 3, fontSize: Theme.type.micro, fontWeight: '700' },
+  overdue: { color: Theme.colors.primary, backgroundColor: Theme.colors.primarySoft },
+  soon: { color: Theme.colors.warningText, backgroundColor: Theme.colors.warningSoft },
+  done: { color: Theme.colors.muted, textDecorationLine: 'line-through' },
+  edit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  editIcon: { color: Theme.colors.muted, fontSize: 20 },
+  add: { position: 'absolute', left: 20, right: 20, bottom: 20, minHeight: 52, borderRadius: 18, backgroundColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' },
+  addText: { color: '#FFFFFF', fontSize: Theme.type.body, fontWeight: '700' },
+});
