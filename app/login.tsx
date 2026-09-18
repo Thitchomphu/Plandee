@@ -40,7 +40,7 @@ export default function LoginScreen() {
     finally { setLoading(false); }
   };
 
-  return <AuthScreenShell title="ยินดีต้อนรับกลับ" description="เข้าสู่ระบบเพื่อจัดการแผนงานของคุณ">
+  return <AuthScreenShell title="ยินดีต้อนรับกลับ" description="เข้าสู่ระบบเพื่อจัดการอีเวนต์ของคุณ">
     <View style={styles.form}>
       <AppInput tone="dark" label="อีเมล" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" autoCapitalize="none" placeholder="you@example.com" />
       <AppInput tone="dark" label="รหัสผ่าน" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" placeholder="รหัสผ่าน" error={error} onSubmitEditing={submit} />

@@ -16,7 +16,7 @@ export function VenueInput({ value, onChangeText }: { value: string; onChangeTex
   }, [value]);
 
   return <View style={styles.group}>
-    <AppInput label="สถานที่จัดงาน" value={value} onChangeText={onChangeText} onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 150)} placeholder="ค้นหาหรือพิมพ์ชื่อสถานที่" autoComplete="street-address" />
+    <AppInput label="สถานที่จัดอีเวนต์" value={value} onChangeText={onChangeText} onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 150)} placeholder="ค้นหาหรือพิมพ์ชื่อสถานที่" autoComplete="street-address" />
     {focused && suggestions.length ? <View style={styles.suggestions}>
       <Text style={styles.heading}>{value.trim() ? 'สถานที่ที่เคยใช้' : 'สถานที่ล่าสุดที่เคยใช้'}</Text>
       {suggestions.map((venue) => <Pressable key={venue} accessibilityRole="button" onPress={() => { onChangeText(venue); setFocused(false); }} style={styles.option}>
@@ -24,7 +24,7 @@ export function VenueInput({ value, onChangeText }: { value: string; onChangeTex
         <Text style={styles.optionText} numberOfLines={2}>{venue}</Text>
       </Pressable>)}
     </View> : null}
-    <Text style={styles.hint}>เลือกจากงานก่อนหน้า หรือพิมพ์สถานที่ใหม่ได้</Text>
+    <Text style={styles.hint}>เลือกจากอีเวนต์ก่อนหน้า หรือพิมพ์สถานที่ใหม่ได้</Text>
   </View>;
 }
 

@@ -28,21 +28,21 @@ export default function EventOverviewScreen() {
     setChecklist(getChecklistItems(eventId));
   }, [eventId]));
 
-  if (!event) return <SafeAreaView style={styles.safe}><View style={styles.missing}><Text style={styles.missingTitle}>ไม่พบอีเวนต์นี้</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/events')} style={styles.missingButton}><Text style={styles.missingButtonText}>กลับไปงานของฉัน</Text></Pressable></View></SafeAreaView>;
+  if (!event) return <SafeAreaView style={styles.safe}><View style={styles.missing}><Text style={styles.missingTitle}>ไม่พบอีเวนต์นี้</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/events')} style={styles.missingButton}><Text style={styles.missingButtonText}>กลับไปอีเวนต์ของฉัน</Text></Pressable></View></SafeAreaView>;
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-    <EventPageHeader title="ภาพรวมงาน" backLabel="ย้อนกลับ" onBack={() => router.canGoBack() ? router.back() : router.replace('/events')} />
+    <EventPageHeader title="ภาพรวมอีเวนต์" backLabel="ย้อนกลับ" onBack={() => router.canGoBack() ? router.back() : router.replace('/events')} />
 
     <EventIdentity event={event} />
 
-    <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.sectionTitle}>จัดการงานนี้</Text><Text style={styles.sectionHint}>เปิดดูรายละเอียดแต่ละด้าน</Text></View>
+    <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.sectionTitle}>จัดการอีเวนต์นี้</Text><Text style={styles.sectionHint}>เปิดดูรายละเอียดแต่ละด้าน</Text></View>
       <View style={styles.summaryGrid}>
         <SummaryCard icon="list-check" label="เช็กลิสต์" value={`${progress}% เตรียมแล้ว`} detail={`${pendingCount} รายการค้าง`} color={Theme.colors.primary} background={Theme.colors.primarySoft} onPress={() => router.replace({ pathname: '/event/checklist', params: { eventId: event.id } })} />
         <SummaryCard icon="users" label="รายชื่อแขก" value={`${event.guests} คน`} color={Theme.colors.lavenderText} background={Theme.colors.lavender} onPress={() => router.replace({ pathname: '/event/guests', params: { eventId: event.id } })} />
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={`ดูงบงาน ${money(event.budget)}`} onPress={() => router.replace({ pathname: '/event/budget', params: { eventId: event.id } })} style={({ pressed }) => [styles.budgetLink, pressed && styles.pressed]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`ดูงบอีเวนต์ ${money(event.budget)}`} onPress={() => router.replace({ pathname: '/event/budget', params: { eventId: event.id } })} style={({ pressed }) => [styles.budgetLink, pressed && styles.pressed]}>
         <View style={styles.budgetIcon}><FontAwesome6 name="coins" size={18} color={Theme.colors.success} solid /></View>
-        <View style={styles.budgetCopy}><Text style={styles.budgetTitle}>งบงาน</Text><Text style={styles.budgetValue}>{money(event.budget)} ที่ตั้งไว้</Text></View>
+        <View style={styles.budgetCopy}><Text style={styles.budgetTitle}>งบอีเวนต์</Text><Text style={styles.budgetValue}>{money(event.budget)} ที่ตั้งไว้</Text></View>
         <FontAwesome6 name="arrow-right" size={14} color={Theme.colors.success} />
       </Pressable>
     </View>
@@ -54,7 +54,7 @@ export default function EventOverviewScreen() {
 function EventIdentity({ event }: { event: EventItem }) {
   const today = new Date();
   const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const status = event.status === 'completed' ? 'เสร็จแล้ว' : event.eventDate < localDate ? 'เลยวันงานแล้ว' : event.daysLeft === 0 ? 'วันนี้' : `อีก ${event.daysLeft} วัน`;
+  const status = event.status === 'completed' ? 'เสร็จแล้ว' : event.eventDate < localDate ? 'เลยวันจัดอีเวนต์แล้ว' : event.daysLeft === 0 ? 'วันนี้' : `อีก ${event.daysLeft} วัน`;
   return <View style={styles.identity}>
     <View style={styles.identityTop}><View style={styles.identityIcon}><EventTypeIcon kind={event.kind} size={23} color={event.accent} /></View><View style={styles.identityCopy}><Text style={styles.identityKind}>{event.kind}</Text><Text style={styles.identityTitle}>{event.title}</Text></View></View>
     <View style={styles.identityMeta}><FontAwesome6 name="calendar-days" size={13} color={Theme.colors.muted} /><Text style={styles.identityMetaText}>{event.date}</Text><View style={styles.statusPill}><Text style={styles.statusText}>{status}</Text></View></View>

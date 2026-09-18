@@ -21,7 +21,7 @@ export function EventVenueMap({ venue }: { venue: string }) {
   };
 
   return <View style={styles.section}>
-    <Text style={styles.title}>สถานที่จัดงาน</Text>
+    <Text style={styles.title}>สถานที่จัดอีเวนต์</Text>
     <Pressable accessibilityRole="button" accessibilityLabel={`เปิด ${venue} ใน Google Maps`} onPress={() => { void openMap(); }} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       {previewUrl && !previewFailed ? <Image source={{ uri: previewUrl }} style={styles.preview} resizeMode="cover" onError={() => setPreviewFailed(true)} /> : <View style={styles.placeholder}><LinearGradient pointerEvents="none" colors={Theme.gradients.soft} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} /><View style={styles.mapMark}><FontAwesome6 name="location-dot" size={24} color={Theme.colors.primary} solid /></View><Text style={styles.placeholderText}>ดูตำแหน่งจริงบน Google Maps</Text></View>}
       <View style={styles.footer}><View style={styles.pin}><FontAwesome6 name="location-dot" size={16} color={Theme.colors.primary} solid /></View><View style={styles.copy}><Text style={styles.venue} numberOfLines={2}>{venue}</Text><Text style={styles.hint}>เปิดแผนที่เพื่อตรวจสอบหมุดและเส้นทาง</Text></View><FontAwesome6 name="arrow-up-right-from-square" size={14} color={Theme.colors.primary} /></View>

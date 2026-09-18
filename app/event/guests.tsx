@@ -28,7 +28,7 @@ export default function GuestListScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
-        <EventPageHeader title="รายชื่อแขก" backLabel="กลับภาพรวมงาน" onBack={() => router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
+        <EventPageHeader title="รายชื่อแขก" backLabel="กลับภาพรวมอีเวนต์" onBack={() => router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
         <EventContextBanner event={event} />
         <EventSectionNav eventId={event.id} active="guests" />
         <View style={styles.summary}><Text style={styles.summaryNumber}>{accepted}/{guests.length}</Text><Text style={styles.summaryText}>แขกตอบรับแล้ว</Text><Pressable onPress={() => router.push({ pathname: '/event/guests-new', params: { eventId: event.id } })} style={styles.addSmall}><Text style={styles.addSmallText}>＋ เพิ่มแขก</Text></Pressable></View>
@@ -36,7 +36,7 @@ export default function GuestListScreen() {
         <AppInput label="ค้นหาแขก" value={search} onChangeText={setSearch} placeholder="พิมพ์ชื่อแขก" autoCapitalize="none" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{filters.map((item) => <Pressable key={item.key} onPress={() => setFilter(item.key)} style={[styles.filter, filter === item.key && styles.filterActive]}><Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>{item.label}</Text></Pressable>)}</ScrollView>
         <View style={styles.list}>{visibleGuests.map((guest) => <GuestRow key={guest.id} guest={guest} onPress={() => router.push({ pathname: '/event/guests-new', params: { eventId: event.id, guestId: guest.id } })} />)}</View>
-        {visibleGuests.length === 0 && <Text style={styles.empty}>{guests.length ? 'ไม่พบแขกที่ตรงกับตัวกรอง' : 'ยังไม่มีแขกในงานนี้ เริ่มเพิ่มแขกคนแรกได้เลย'}</Text>}
+        {visibleGuests.length === 0 && <Text style={styles.empty}>{guests.length ? 'ไม่พบแขกที่ตรงกับตัวกรอง' : 'ยังไม่มีแขกในอีเวนต์นี้ เริ่มเพิ่มแขกคนแรกได้เลย'}</Text>}
       </ScrollView>
     </SafeAreaView>
   );

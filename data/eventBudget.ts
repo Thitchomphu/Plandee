@@ -71,7 +71,7 @@ export const getCategoryBudgetTotal = (eventId: string) => getBudgetCategories(e
 const overEventBudget = (eventId: string, total: number) => {
   const limit = events.find((event) => event.id === eventId)?.budget;
   return limit !== undefined && total > limit
-    ? new Error(`งบหมวดรวม ${total.toLocaleString('th-TH')} บาท เกินงบงาน ${limit.toLocaleString('th-TH')} บาท กรุณาลดวงเงินหมวดหรือเพิ่มงบงานก่อน`)
+    ? new Error(`งบหมวดรวม ${total.toLocaleString('th-TH')} บาท เกินงบอีเวนต์ ${limit.toLocaleString('th-TH')} บาท กรุณาลดวงเงินหมวดหรือเพิ่มงบอีเวนต์ก่อน`)
     : null;
 };
 
@@ -102,7 +102,7 @@ export const getExpenseOverrun = (eventId: string, categoryId: string, amount: n
   const category = categories.find((item) => item.id === categoryId);
   const categoryTotal = category ? getBudgetBreakdown([category]).allocated - previous + amount : 0;
   if (total <= eventBudget && (!category || categoryTotal <= category.planned)) return null;
-  return `รายการที่คาดว่าจะใช้รวม ${total.toLocaleString('th-TH')} บาท จากงบงาน ${eventBudget.toLocaleString('th-TH')} บาท${category && categoryTotal > category.planned ? ` และหมวด ${category.name} เกินวงเงิน ${category.planned.toLocaleString('th-TH')} บาท` : ''}`;
+  return `รายการที่คาดว่าจะใช้รวม ${total.toLocaleString('th-TH')} บาท จากงบอีเวนต์ ${eventBudget.toLocaleString('th-TH')} บาท${category && categoryTotal > category.planned ? ` และหมวด ${category.name} เกินวงเงิน ${category.planned.toLocaleString('th-TH')} บาท` : ''}`;
 };
 export const getChecklistCategoryNames = (eventId: string) => Array.from(new Set(['สถานที่', 'อาหาร', 'ตกแต่ง', 'อื่น ๆ', ...getBudgetCategories(eventId).map((category) => category.name)]));
 export const setBudgetCategory = async (eventId: string, categoryId: string, planned: number, note: string) => {

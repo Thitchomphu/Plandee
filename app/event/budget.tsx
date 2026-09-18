@@ -52,15 +52,15 @@ export default function EventBudgetScreen() {
   const spentWidth = event?.budget ? Math.min((spent / event.budget) * 100, 100) : 0;
   const plannedWidth = event?.budget ? Math.min((planned / event.budget) * 100, 100 - spentWidth) : 0;
 
-  if (!event) return <SafeAreaView style={styles.safe}><View style={feedbackStyles.center}>{loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.empty}>{loadError ? 'โหลดงบประมาณไม่สำเร็จ' : 'ไม่พบงานนี้'}</Text>}<Pressable accessibilityRole="button" onPress={() => { void refresh(); }}><Text style={feedbackStyles.retry}>ลองอีกครั้ง</Text></Pressable></View></SafeAreaView>;
+  if (!event) return <SafeAreaView style={styles.safe}><View style={feedbackStyles.center}>{loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.empty}>{loadError ? 'โหลดงบประมาณไม่สำเร็จ' : 'ไม่พบอีเวนต์นี้'}</Text>}<Pressable accessibilityRole="button" onPress={() => { void refresh(); }}><Text style={feedbackStyles.retry}>ลองอีกครั้ง</Text></Pressable></View></SafeAreaView>;
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     {loadError ? <Pressable accessibilityRole="button" onPress={() => { void refresh(); }} style={feedbackStyles.error}><Text style={feedbackStyles.errorText}>โหลดงบประมาณล่าสุดไม่สำเร็จ แตะเพื่อลองใหม่</Text></Pressable> : null}
-    <EventPageHeader title="งบงาน" backLabel={from === 'budget-tab' ? 'กลับงบประมาณรวม' : 'กลับภาพรวมงาน'} onBack={() => from === 'budget-tab' ? router.back() : router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
+    <EventPageHeader title="งบอีเวนต์" backLabel={from === 'budget-tab' ? 'กลับงบประมาณรวม' : 'กลับภาพรวมอีเวนต์'} onBack={() => from === 'budget-tab' ? router.back() : router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
     <View style={styles.eventContext}><Text style={styles.eventName} numberOfLines={1}>{event.title}</Text><Text style={styles.eventDate}>{event.date}</Text></View>
     <LinearGradient colors={Theme.gradients.budget} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={dashboardStyles.card}>
       <Text style={dashboardStyles.eyebrow}>ภาพรวมงบประมาณ</Text>
-      <Text style={dashboardStyles.label}>{remaining < 0 ? 'รายการเกินงบงาน' : remaining === 0 ? 'จัดสรรครบแล้ว' : 'ยอดคงเหลือ'}</Text>
+      <Text style={dashboardStyles.label}>{remaining < 0 ? 'รายการเกินงบอีเวนต์' : remaining === 0 ? 'จัดสรรครบแล้ว' : 'ยอดคงเหลือ'}</Text>
       <Text style={dashboardStyles.amount} numberOfLines={1} adjustsFontSizeToFit>{money(Math.abs(remaining))}</Text>
       <Text style={dashboardStyles.caption}>จากงบทั้งหมด {money(event.budget)}</Text>
       <Text style={dashboardStyles.caption}>จัดสรรให้หมวดแล้ว {money(categoryBudgetTotal)} · ยังไม่จัดสรร {money(Math.max(event.budget - categoryBudgetTotal, 0))}</Text>
@@ -72,7 +72,7 @@ export default function EventBudgetScreen() {
       <View style={dashboardStyles.legend}><View style={[dashboardStyles.dot, dashboardStyles.plannedDot]} /><Text style={dashboardStyles.legendLabel}>วางไว้ / ยังไม่จ่าย</Text><Text style={dashboardStyles.legendValue}>{money(planned)}</Text></View>
       <Text style={dashboardStyles.explanation}>“ใช้ไปแล้ว” นับเฉพาะรายการค่าใช้จ่ายที่ระบุว่าจ่ายแล้ว</Text>
     </LinearGradient>
-    {categoryBudgetTotal > event.budget ? <View style={feedbackStyles.error}><Text style={feedbackStyles.errorText}>งบหมวดรวมเกินงบงาน {money(categoryBudgetTotal - event.budget)} กรุณาปรับวงเงินแต่ละหมวด</Text></View> : null}
+    {categoryBudgetTotal > event.budget ? <View style={feedbackStyles.error}><Text style={feedbackStyles.errorText}>งบหมวดรวมเกินงบอีเวนต์ {money(categoryBudgetTotal - event.budget)} กรุณาปรับวงเงินแต่ละหมวด</Text></View> : null}
     <EventSectionNav eventId={event.id} active="budget" />
     <View style={styles.sectionHeader}><View><Text style={styles.section}>งบประมาณตามหมวด</Text><Text style={styles.sectionHint}>แตะหมวดเพื่อดูหรือแก้ไขรายการ</Text></View></View>
     {categories.length ? categories.map((category) => <CategoryCard key={category.id} category={category} eventId={event.id} />) : <Text style={styles.empty}>ยังไม่มีหมวดงบประมาณ</Text>}

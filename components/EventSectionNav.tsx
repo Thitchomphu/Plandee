@@ -9,7 +9,7 @@ type Section = 'checklist' | 'guests' | 'budget';
 const sections: { key: Section; label: string }[] = [
   { key: 'checklist', label: 'เช็กลิสต์' },
   { key: 'guests', label: 'แขก' },
-  { key: 'budget', label: 'งบงาน' },
+  { key: 'budget', label: 'งบอีเวนต์' },
 ];
 
 export function EventSectionNav({ eventId, active }: { eventId: string; active: Section }) {

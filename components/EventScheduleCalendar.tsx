@@ -26,7 +26,7 @@ export function EventScheduleCalendar({ eventDate, items }: { eventDate: string;
   };
 
   return <View style={styles.card}>
-    <View style={styles.heading}><View><Text style={styles.title}>ปฏิทินเตรียมงาน</Text><Text style={styles.hint}>วันงานและกำหนดส่งของเช็กลิสต์</Text></View><FontAwesome6 name="calendar-days" size={19} color={Theme.colors.primary} /></View>
+    <View style={styles.heading}><View><Text style={styles.title}>ปฏิทินเตรียมงาน</Text><Text style={styles.hint}>วันจัดอีเวนต์และกำหนดส่งของเช็กลิสต์</Text></View><FontAwesome6 name="calendar-days" size={19} color={Theme.colors.primary} /></View>
     <View style={styles.monthRow}>
       <Pressable accessibilityRole="button" accessibilityLabel="เดือนก่อน" onPress={() => changeMonth(-1)} style={styles.monthButton}><FontAwesome6 name="chevron-left" size={13} color={Theme.colors.text} /></Pressable>
       <Text style={styles.monthTitle}>{new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(month)}</Text>
@@ -40,7 +40,7 @@ export function EventScheduleCalendar({ eventDate, items }: { eventDate: string;
         const isSelected = date === selected;
         const isEventDay = date === eventDate;
         const hasTasks = datedItems.some((item) => item.dueDate === date);
-        return <Pressable key={date} accessibilityRole="button" accessibilityLabel={`${day} ${new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(month)}${isEventDay ? ' วันจัดงาน' : ''}${hasTasks ? ' มีรายการเตรียมงาน' : ''}`} onPress={() => setSelected(date)} style={[styles.dayCell, isSelected && styles.selectedCell]}>
+        return <Pressable key={date} accessibilityRole="button" accessibilityLabel={`${day} ${new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(month)}${isEventDay ? ' วันจัดอีเวนต์' : ''}${hasTasks ? ' มีรายการเตรียมงาน' : ''}`} onPress={() => setSelected(date)} style={[styles.dayCell, isSelected && styles.selectedCell]}>
           <Text style={[styles.dayNumber, isSelected && styles.selectedNumber, isEventDay && !isSelected && styles.eventNumber]}>{day}</Text>
           {(isEventDay || hasTasks) ? <View style={[styles.dot, { backgroundColor: isSelected ? '#FFFFFF' : isEventDay ? Theme.colors.primary : Theme.colors.lavenderText }]} /> : null}
         </Pressable>;
@@ -48,7 +48,7 @@ export function EventScheduleCalendar({ eventDate, items }: { eventDate: string;
     </View>
     <View style={styles.agenda}>
       <Text style={styles.agendaDate}>{new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${selected}T00:00:00`))}</Text>
-      {selected === eventDate ? <Text style={styles.eventItem}>วันจัดงาน</Text> : null}
+      {selected === eventDate ? <Text style={styles.eventItem}>วันจัดอีเวนต์</Text> : null}
       {selectedItems.map((item) => <View key={item.id} style={styles.agendaItem}><View style={[styles.agendaDot, item.done && styles.agendaDone]} /><Text style={[styles.agendaText, item.done && styles.doneText]} numberOfLines={2}>{item.title}</Text></View>)}
       {selected !== eventDate && !selectedItems.length ? <Text style={styles.empty}>ไม่มีรายการที่กำหนดส่งวันนี้</Text> : null}
     </View>

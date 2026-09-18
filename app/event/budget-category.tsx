@@ -20,7 +20,7 @@ export default function BudgetCategoryScreen() {
   const detailParams = { eventId, categoryId };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}>
-    <EventPageHeader title="หมวดงบงาน" backLabel="กลับงบงาน" onBack={() => router.canGoBack() ? router.back() : router.replace({ pathname: '/event/budget', params: { eventId } })} />
+    <EventPageHeader title="หมวดงบอีเวนต์" backLabel="กลับงบอีเวนต์" onBack={() => router.canGoBack() ? router.back() : router.replace({ pathname: '/event/budget', params: { eventId } })} />
     <View style={styles.titleRow}><Text style={styles.title} numberOfLines={2}>{category.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={`แก้งบหมวด ${category.name}`} onPress={() => router.push({ pathname: '/event/budget-category-new', params: detailParams })} style={styles.editButton}><Text style={styles.editText}>แก้ไข</Text></Pressable></View>
     <View style={styles.summary}>
       <Text style={styles.summaryLabel}>{remaining < 0 ? 'เกินงบ' : remaining === 0 ? 'ใช้วงเงินครบแล้ว' : 'วงเงินคงเหลือ'}</Text>

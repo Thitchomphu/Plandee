@@ -55,5 +55,5 @@ export async function createEventWithChecklist(input: { title: string; kind: str
 export async function setEventFavorite(id: string, isFavorite: boolean) {
   const { error } = await supabase.from('events').update({ is_favorite: isFavorite }).eq('id', id);
   if (!error) events = events.map((event) => event.id === id ? { ...event, isFavorite } : event);
-  return { error: error && /is_favorite/i.test(error.message) ? new Error('กรุณาเพิ่มคอลัมน์งานโปรดด้วย migration 004_event_favorite.sql ก่อน') : error };
+  return { error: error && /is_favorite/i.test(error.message) ? new Error('กรุณาเพิ่มคอลัมน์อีเวนต์โปรดด้วย migration 004_event_favorite.sql ก่อน') : error };
 }

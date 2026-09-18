@@ -29,7 +29,7 @@ export default function EventChecklistScreen() {
   };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-    <EventPageHeader title="เช็กลิสต์" backLabel="กลับภาพรวมงาน" onBack={() => router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
+    <EventPageHeader title="เช็กลิสต์" backLabel="กลับภาพรวมอีเวนต์" onBack={() => router.replace({ pathname: '/event/[id]', params: { id: event.id } })} />
     <EventContextBanner event={event} />
     <View style={styles.progressRow}><ProgressRing progress={progress} /><View style={styles.progressText}><Text style={styles.progressTitle}>เช็กลิสต์ {done}/{items.length} รายการเสร็จแล้ว</Text><Text style={styles.progressDescription}>เหลืออีก <Text style={styles.strong}>{items.length - done} รายการ</Text> ที่ต้องเตรียม</Text></View></View>
     {urgentCount > 0 ? <View style={styles.dueBanner}><Text style={styles.dueBannerTitle}>มี {urgentCount} งานที่ต้องติดตาม</Text><Text style={styles.dueBannerText}>นับงานที่เกินกำหนดหรือครบกำหนดภายใน 3 วัน โดยไม่นับงานที่ทำเสร็จแล้ว</Text></View> : null}

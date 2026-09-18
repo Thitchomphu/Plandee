@@ -60,16 +60,16 @@ export default function BudgetScreen() {
       <Text style={summaryStyles.caption}>ใช้แล้วและวางไว้ {money(totalAllocated)} จากงบ {money(totalBudget)}</Text>
       <View style={summaryStyles.track}><View style={[summaryStyles.progress, { width: `${Math.min(Math.max(percent, 0), 100)}%` }]} /></View>
     </LinearGradient> : null}
-    {summaries.length ? <Text style={styles.sectionTitle}>งบประมาณแยกตามงาน</Text> : null}
+    {summaries.length ? <Text style={styles.sectionTitle}>งบประมาณแยกตามอีเวนต์</Text> : null}
     {summaries.length ? summaries.map(({ event, allocated }) => {
       const eventRemaining = event.budget - allocated;
-      return <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`ดูงบประมาณงาน ${event.title}`} onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id, from: 'budget-tab' } })} style={budgetCardStyles.card}>
+      return <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`ดูงบประมาณอีเวนต์ ${event.title}`} onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id, from: 'budget-tab' } })} style={budgetCardStyles.card}>
         <View style={budgetCardStyles.header}><Text style={budgetCardStyles.eventTitle} numberOfLines={1}>{event.title}</Text><FontAwesome6 name="chevron-right" size={13} color={Theme.colors.muted} /></View>
         <View style={budgetCardStyles.amountRow}><Text style={[budgetCardStyles.amount, eventRemaining < 0 && budgetCardStyles.overBudget]} numberOfLines={1} adjustsFontSizeToFit>{money(Math.abs(eventRemaining))}</Text><Text style={[budgetCardStyles.balanceLabel, eventRemaining < 0 && budgetCardStyles.overBudget]}>{eventRemaining < 0 ? 'รายการเกินงบ' : eventRemaining === 0 ? 'จัดสรรครบแล้ว' : 'ยอดคงเหลือ'}</Text></View>
         <Text style={budgetCardStyles.caption}>ใช้แล้วและวางไว้ {money(allocated)} จากงบ {money(event.budget)}</Text>
         <View style={styles.track}><View style={[styles.progress, { width: `${Math.min(event.budget ? (allocated / event.budget) * 100 : 0, 100)}%` }]} /></View>
       </Pressable>;
-    }) : !loading && !loadError ? <View style={budgetCardStyles.empty}><FontAwesome6 name="wallet" size={24} color={Theme.colors.primary} solid /><Text style={budgetCardStyles.emptyTitle}>ยังไม่มีงบประมาณของงาน</Text><Text style={budgetCardStyles.emptyBody}>สร้างอีเวนต์แรกเพื่อเริ่มวางแผนค่าใช้จ่าย</Text><Pressable accessibilityRole="button" onPress={() => router.push('/event/new')} style={budgetCardStyles.emptyAction}><Text style={budgetCardStyles.emptyActionText}>สร้างอีเวนต์</Text></Pressable></View> : null}
+    }) : !loading && !loadError ? <View style={budgetCardStyles.empty}><FontAwesome6 name="wallet" size={24} color={Theme.colors.primary} solid /><Text style={budgetCardStyles.emptyTitle}>ยังไม่มีงบประมาณของอีเวนต์</Text><Text style={budgetCardStyles.emptyBody}>สร้างอีเวนต์แรกเพื่อเริ่มวางแผนค่าใช้จ่าย</Text><Pressable accessibilityRole="button" onPress={() => router.push('/event/new')} style={budgetCardStyles.emptyAction}><Text style={budgetCardStyles.emptyActionText}>สร้างอีเวนต์</Text></Pressable></View> : null}
   </ScrollView></SafeAreaView>;
 }
 

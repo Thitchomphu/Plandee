@@ -15,11 +15,11 @@ export default function SellersScreen() {
   const event = events.find((item) => item.id === eventId) ?? events[0];
   const sellers = getSellers(event.id);
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-    <EventPageHeader title="ผู้ให้บริการ" backLabel="กลับภาพรวมงาน" onBack={() => router.back()} />
-    <Text style={styles.title}>ผู้ให้บริการของงาน</Text><Text style={styles.subtitle}>{event.title}</Text>
+    <EventPageHeader title="ผู้ให้บริการ" backLabel="กลับภาพรวมอีเวนต์" onBack={() => router.back()} />
+    <Text style={styles.title}>ผู้ให้บริการของอีเวนต์</Text><Text style={styles.subtitle}>{event.title}</Text>
     <View style={styles.summary}><Text style={styles.summaryValue}>{sellers.length}</Text><Text style={styles.summaryLabel}>ผู้ให้บริการที่เชื่อมกับเช็กลิสต์และงบประมาณ</Text></View>
     <Text style={styles.section}>รายชื่อผู้ให้บริการ</Text>
-    {sellers.length ? sellers.map((seller) => <SellerCard key={seller.id} seller={seller} onPress={() => router.push({ pathname: '/event/seller-detail', params: { eventId: event.id, sellerId: seller.id } })} />) : <Text style={styles.empty}>ยังไม่มีผู้ให้บริการในงานนี้ เพิ่มชื่อผู้ให้บริการในเช็กลิสต์หรือรายการงบประมาณก่อน</Text>}
+    {sellers.length ? sellers.map((seller) => <SellerCard key={seller.id} seller={seller} onPress={() => router.push({ pathname: '/event/seller-detail', params: { eventId: event.id, sellerId: seller.id } })} />) : <Text style={styles.empty}>ยังไม่มีผู้ให้บริการในอีเวนต์นี้ เพิ่มชื่อผู้ให้บริการในเช็กลิสต์หรือรายการงบประมาณก่อน</Text>}
   </ScrollView></SafeAreaView>;
 }
 

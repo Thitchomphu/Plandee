@@ -64,7 +64,7 @@ export default function HomeScreen() {
   const toggleFavorite = async (event: EventItem) => {
     const { error } = await setEventFavorite(event.id, !event.isFavorite);
     if (!error) setItems([...events]);
-    else Alert.alert('บันทึกงานโปรดไม่สำเร็จ', error.message);
+    else Alert.alert('บันทึกอีเวนต์โปรดไม่สำเร็จ', error.message);
   };
   const otherEvents = items.filter((event) => event.id !== featuredEvent?.id).slice(0, 2);
   const allUrgent = urgentTasks(getChecklistItems().filter((task) => items.some((event) => event.id === task.eventId)));
@@ -78,9 +78,9 @@ export default function HomeScreen() {
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={loading && items.length > 0} onRefresh={() => { void refresh(); }} tintColor={Theme.colors.primary} colors={[Theme.colors.primary]} />}>
     <View style={styles.header}>
-      <View style={styles.headerCopy}><Text style={styles.eyebrow}>ภาพรวมวันนี้</Text><Text style={styles.greeting} numberOfLines={1}>สวัสดี คุณ{displayName}</Text><Text style={styles.subtitle}>ทุกงานสำคัญ เริ่มต้นจากแผนที่ดี</Text></View>
+      <View style={styles.headerCopy}><Text style={styles.eyebrow}>ภาพรวมวันนี้</Text><Text style={styles.greeting} numberOfLines={1}>สวัสดี คุณ{displayName}</Text><Text style={styles.subtitle}>ทุกอีเวนต์สำคัญ เริ่มต้นจากแผนที่ดี</Text></View>
       <Pressable accessibilityRole="button" accessibilityLabel="ดูงานใกล้ครบกำหนด" onPress={() => router.push('/reminders')} style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}><FontAwesome6 name="bell" size={18} color={Theme.colors.primary} /></Pressable>
-      {items.length ? <Pressable accessibilityRole="button" accessibilityLabel="สร้างงานใหม่" onPress={() => router.push('/event/new')} style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}><FontAwesome6 name="plus" size={18} color={Theme.colors.primary} /></Pressable> : null}
+      {items.length ? <Pressable accessibilityRole="button" accessibilityLabel="สร้างอีเวนต์ใหม่" onPress={() => router.push('/event/new')} style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}><FontAwesome6 name="plus" size={18} color={Theme.colors.primary} /></Pressable> : null}
     </View>
 
     {loadError ? <Pressable accessibilityRole="button" onPress={() => { void refresh(); }} style={styles.errorCard}><Text style={styles.errorTitle}>โหลดข้อมูลหน้าแรกไม่สำเร็จ</Text><Text style={styles.errorDetail}>แตะเพื่อลองใหม่ หรือเช็กการเชื่อมต่ออินเทอร์เน็ต</Text></Pressable> : null}
@@ -89,13 +89,13 @@ export default function HomeScreen() {
 
     {urgent.length ? <View style={styles.section}>
       <SectionHeader title={`งานใกล้ครบกำหนด · ${allUrgent.length}`} onPress={() => router.push('/reminders')} />
-      <Text style={styles.summaryHint}>รวมงานที่เกินกำหนดและครบกำหนดภายใน 3 วันจากทุกอีเวนต์{allUrgent.length > 5 ? ' · แสดง 5 รายการแรก' : ''}</Text>
+      <Text style={styles.summaryHint}>รวมรายการที่เกินกำหนดและครบกำหนดภายใน 3 วันจากทุกอีเวนต์{allUrgent.length > 5 ? ' · แสดง 5 รายการแรก' : ''}</Text>
       <View style={styles.taskList}>{urgent.map((task) => <UrgentTaskRow key={task.id} task={task} eventTitle={items.find((event) => event.id === task.eventId)?.title ?? ''} />)}</View>
     </View> : null}
 
     {!items.length && !loading && !loadError ? <View style={styles.section}><Text style={styles.sectionTitle}>เริ่มต้นใน 3 ขั้นตอน</Text><View style={styles.starterCard}>
       <StarterStep number="01" icon="calendar-days" title="สร้างอีเวนต์" detail="กำหนดวัน สถานที่ และงบ" />
-      <StarterStep number="02" icon="list-check" title="เตรียมเช็กลิสต์" detail="แบ่งงานใหญ่ให้เป็นขั้นตอน" />
+      <StarterStep number="02" icon="list-check" title="เตรียมเช็กลิสต์" detail="แบ่งสิ่งที่ต้องทำเป็นขั้นตอน" />
       <StarterStep number="03" icon="users" title="จัดการแขก" detail="ติดตามคำตอบและจัดที่นั่ง" />
     </View></View> : null}
 
@@ -111,18 +111,18 @@ export default function HomeScreen() {
       <Stat icon="coins" value={money(totalBudget)} label="งบที่ตั้งไว้รวม" background={Theme.colors.mint} color={Theme.colors.success} />
     </View></View> : null}
 
-    {otherEvents.length ? <View style={styles.section}><SectionHeader title="งานอื่นของคุณ" onPress={() => router.push('/events')} /><View style={styles.otherList}>{otherEvents.map((event) => <CompactEvent key={event.id} event={event} />)}</View></View> : null}
+    {otherEvents.length ? <View style={styles.section}><SectionHeader title="อีเวนต์อื่นของคุณ" onPress={() => router.push('/events')} /><View style={styles.otherList}>{otherEvents.map((event) => <CompactEvent key={event.id} event={event} />)}</View></View> : null}
   </ScrollView></SafeAreaView>;
 }
 
 function FeaturedEvent({ event, progress, isNext, today, onToggleFavorite }: { event: EventItem; progress: number; isNext: boolean; today: string; onToggleFavorite: () => void }) {
   const countdown = event.status === 'completed' ? 'เสร็จแล้ว' : event.eventDate < today ? `ผ่านไป ${Math.abs(event.daysLeft)} วัน` : event.daysLeft === 0 ? 'วันนี้' : `อีก ${event.daysLeft} วัน`;
-  return <Pressable accessibilityRole="button" accessibilityLabel={`ดูงาน ${event.title}`} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} style={({ pressed }) => [styles.hero, pressed && styles.pressed]}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={`ดูอีเวนต์ ${event.title}`} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} style={({ pressed }) => [styles.hero, pressed && styles.pressed]}>
     <LinearGradient pointerEvents="none" colors={Theme.gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
     <View pointerEvents="none" style={styles.heroCircleLarge} /><View pointerEvents="none" style={styles.heroCircleSmall} />
-    <View style={styles.heroTop}><View style={styles.heroEyebrow}><FontAwesome6 name="star" size={12} color={Theme.colors.heroProgress} solid /><Text style={styles.heroEyebrowText}>{event.isFavorite ? 'งานโปรดของคุณ' : isNext ? 'งานที่ใกล้ถึง' : 'งานล่าสุด'}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={event.isFavorite ? 'นำออกจากงานโปรด' : 'เพิ่มเป็นงานโปรด'} onPress={(pressEvent) => { pressEvent.stopPropagation(); onToggleFavorite(); }} hitSlop={10} style={styles.favoriteButton}><FontAwesome6 name="star" size={18} color={event.isFavorite ? '#FFD07A' : '#FFFFFF'} solid={event.isFavorite} /></Pressable><View style={styles.countdown}><Text style={styles.countdownText}>{countdown}</Text></View></View>
+    <View style={styles.heroTop}><View style={styles.heroEyebrow}><FontAwesome6 name="star" size={12} color={Theme.colors.heroProgress} solid /><Text style={styles.heroEyebrowText}>{event.isFavorite ? 'อีเวนต์โปรดของคุณ' : isNext ? 'อีเวนต์ที่ใกล้ถึง' : 'อีเวนต์ล่าสุด'}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={event.isFavorite ? 'นำออกจากอีเวนต์โปรด' : 'เพิ่มเป็นอีเวนต์โปรด'} onPress={(pressEvent) => { pressEvent.stopPropagation(); onToggleFavorite(); }} hitSlop={10} style={styles.favoriteButton}><FontAwesome6 name="star" size={18} color={event.isFavorite ? '#FFD07A' : '#FFFFFF'} solid={event.isFavorite} /></Pressable><View style={styles.countdown}><Text style={styles.countdownText}>{countdown}</Text></View></View>
     <View style={styles.heroMain}><View style={styles.heroIcon}><EventTypeIcon kind={event.kind} size={26} /></View><Text style={styles.heroTitle} numberOfLines={2}>{event.title}</Text><View style={styles.heroMeta}><FontAwesome6 name="calendar-days" size={13} color={Theme.colors.heroMuted} /><Text style={styles.heroMetaText}>{event.date}</Text><Text style={styles.heroDot}>·</Text><Text style={styles.heroMetaText} numberOfLines={1}>{event.venue}</Text></View></View>
-    <View style={styles.heroBottom}><View style={styles.progressLabels}><Text style={styles.progressCaption}>ความคืบหน้า</Text><Text style={styles.progressPercent}>{progress}%</Text></View><View style={styles.heroTrack}><View style={[styles.heroProgress, { width: `${progress}%` }]} /></View><View style={styles.heroAction}><Text style={styles.heroActionText}>ดูรายละเอียดงาน</Text><FontAwesome6 name="arrow-right" size={14} color="#FFFFFF" /></View></View>
+    <View style={styles.heroBottom}><View style={styles.progressLabels}><Text style={styles.progressCaption}>ความคืบหน้า</Text><Text style={styles.progressPercent}>{progress}%</Text></View><View style={styles.heroTrack}><View style={[styles.heroProgress, { width: `${progress}%` }]} /></View><View style={styles.heroAction}><Text style={styles.heroActionText}>ดูรายละเอียดอีเวนต์</Text><FontAwesome6 name="arrow-right" size={14} color="#FFFFFF" /></View></View>
   </Pressable>;
 }
 

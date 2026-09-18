@@ -17,7 +17,7 @@ import { createEventWithChecklist } from '@/data/events';
 type Template = { id: string; title: string; category: ChecklistCategory };
 const eventTypes = ['งานแต่งงาน', 'งานสัมมนา', 'วันเกิด', 'งานเปิดตัว'];
 const templatesByType: Record<string, Template[]> = {
-  งานแต่งงาน: [{ id: 'wedding-venue', title: 'เลือกสถานที่จัดงาน', category: 'สถานที่' }, { id: 'wedding-food', title: 'เลือกเมนูอาหารและเครื่องดื่ม', category: 'อาหาร' }, { id: 'wedding-decor', title: 'สรุปแบบตกแต่งสถานที่', category: 'ตกแต่ง' }],
+  งานแต่งงาน: [{ id: 'wedding-venue', title: 'เลือกสถานที่จัดอีเวนต์', category: 'สถานที่' }, { id: 'wedding-food', title: 'เลือกเมนูอาหารและเครื่องดื่ม', category: 'อาหาร' }, { id: 'wedding-decor', title: 'สรุปแบบตกแต่งสถานที่', category: 'ตกแต่ง' }],
   งานสัมมนา: [{ id: 'seminar-venue', title: 'จองห้องประชุม', category: 'สถานที่' }, { id: 'seminar-food', title: 'จัดเตรียมอาหารว่าง', category: 'อาหาร' }, { id: 'seminar-materials', title: 'เตรียมเอกสารและอุปกรณ์', category: 'อื่น ๆ' }],
   วันเกิด: [{ id: 'birthday-venue', title: 'เลือกสถานที่จัดปาร์ตี้', category: 'สถานที่' }, { id: 'birthday-food', title: 'สั่งอาหารและเค้ก', category: 'อาหาร' }, { id: 'birthday-decor', title: 'เตรียมของตกแต่ง', category: 'ตกแต่ง' }],
   งานเปิดตัว: [{ id: 'launch-venue', title: 'ยืนยันสถานที่เปิดตัว', category: 'สถานที่' }, { id: 'launch-materials', title: 'เตรียมสื่อประชาสัมพันธ์', category: 'อื่น ๆ' }, { id: 'launch-decor', title: 'จัดเตรียมเวทีและตกแต่ง', category: 'ตกแต่ง' }],
@@ -41,7 +41,7 @@ export default function NewEventScreen() {
     if (submitting || savedWithoutReload) return;
     const parsedBudget = currencyValue(budget);
     if (!title.trim() || !venue.trim() || !eventDate || !parsedBudget || parsedBudget <= 0) {
-      setSubmitError('กรุณากรอกชื่องาน สถานที่ เลือกวันที่ และงบประมาณเป็นตัวเลขบวก');
+      setSubmitError('กรุณากรอกชื่ออีเวนต์ สถานที่ เลือกวันที่ และงบประมาณเป็นตัวเลขบวก');
       return;
     }
     setSubmitting(true);
@@ -52,31 +52,31 @@ export default function NewEventScreen() {
       if (result.error) { setSubmitError(`บันทึกไม่สำเร็จ: ${result.error.message}`); return; }
       if (!result.event && result.saved) {
         setSavedWithoutReload(true);
-        setSubmitError('บันทึกงานใน Supabase แล้ว แต่แอปโหลดงานกลับมาไม่สำเร็จ อย่ากดสร้างซ้ำ กรุณาไปที่หน้างานของฉันแล้วลองโหลดใหม่');
+        setSubmitError('บันทึกอีเวนต์ใน Supabase แล้ว แต่แอปโหลดข้อมูลกลับมาไม่สำเร็จ อย่ากดสร้างซ้ำ กรุณาไปที่หน้าอีเวนต์ของฉันแล้วลองโหลดใหม่');
         return;
       }
-      if (!result.event) { setSubmitError('ไม่สามารถยืนยันการบันทึกงานได้ กรุณาลองใหม่อีกครั้ง'); return; }
+      if (!result.event) { setSubmitError('ไม่สามารถยืนยันการบันทึกอีเวนต์ได้ กรุณาลองใหม่อีกครั้ง'); return; }
       router.replace({ pathname: '/event/[id]', params: { id: result.event.id } });
     } catch {
-      setSubmitError('เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบรายการงานก่อนกดสร้างซ้ำ');
+      setSubmitError('เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบรายการอีเวนต์ก่อนกดสร้างซ้ำ');
     } finally {
       setSubmitting(false);
     }
   };
 
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <EventPageHeader title="สร้างงาน" backLabel="ยกเลิกการสร้างงาน" onBack={() => router.back()} />
-    <View style={styles.tip}><Text style={styles.tipIcon}>💡</Text><View style={styles.tipText}><Text style={styles.tipTitle}>เริ่มต้นด้วยเช็กลิสต์ที่เหมาะกับงาน</Text><Text style={styles.tipBody}>เลือกประเภทงาน แล้วเลือกเฉพาะรายการที่ต้องการใช้ได้ทันที</Text></View></View>
-    <AppInput label="ชื่องาน" value={title} onChangeText={setTitle} placeholder="กรอกชื่องาน" />
+    <EventPageHeader title="สร้างอีเวนต์" backLabel="ยกเลิกการสร้างอีเวนต์" onBack={() => router.back()} />
+    <View style={styles.tip}><Text style={styles.tipIcon}>💡</Text><View style={styles.tipText}><Text style={styles.tipTitle}>เริ่มต้นด้วยเช็กลิสต์ที่เหมาะกับอีเวนต์</Text><Text style={styles.tipBody}>เลือกประเภทอีเวนต์ แล้วเลือกเฉพาะรายการที่ต้องการใช้ได้ทันที</Text></View></View>
+    <AppInput label="ชื่ออีเวนต์" value={title} onChangeText={setTitle} placeholder="กรอกชื่ออีเวนต์" />
     <VenueInput value={venue} onChangeText={setVenue} />
-    <Text style={styles.label}>ประเภทงาน</Text><View style={styles.types}>{eventTypes.map((item) => <Pressable key={item} onPress={() => chooseType(item)} style={[styles.type, item === type && styles.typeActive]}><Text style={[styles.typeText, item === type && styles.typeTextActive]}>{item}</Text></Pressable>)}</View>
-    <DateInput label="วันที่จัดงาน" value={eventDate} onChange={setEventDate} minimumDate={new Date()} />
+    <Text style={styles.label}>ประเภทอีเวนต์</Text><View style={styles.types}>{eventTypes.map((item) => <Pressable key={item} onPress={() => chooseType(item)} style={[styles.type, item === type && styles.typeActive]}><Text style={[styles.typeText, item === type && styles.typeTextActive]}>{item}</Text></Pressable>)}</View>
+    <DateInput label="วันที่จัดอีเวนต์" value={eventDate} onChange={setEventDate} minimumDate={new Date()} />
     <CurrencyInput label="งบประมาณ (บาท)" value={budget} onChangeText={setBudget} placeholder="เช่น 150,000" />
     <View style={styles.checklistHeader}><Text style={styles.label}>เช็กลิสต์เบื้องต้น</Text><Text style={styles.selected}>{selected.length}/{templates.length} รายการ</Text></View>
     <View style={styles.checklist}>{templates.map((item) => <Pressable key={item.id} accessibilityRole="checkbox" accessibilityState={{ checked: selected.includes(item.id) }} onPress={() => toggle(item.id)} style={styles.checkItem}><SelectMark selected={selected.includes(item.id)} size={26} /><View style={styles.checkText}><Text style={styles.checkTitle}>{item.title}</Text><Text style={styles.checkMeta}>{item.category}</Text></View></Pressable>)}</View>
     {submitError ? <Text accessibilityRole="alert" style={{ color: Theme.colors.primary, backgroundColor: Theme.colors.primarySoft, borderRadius: 12, padding: 14, fontSize: 14 }}>{submitError}</Text> : null}
-    <AppButton title={submitting ? 'กำลังสร้างงาน...' : 'สร้างงาน'} onPress={submit} disabled={submitting || savedWithoutReload} />
-    {savedWithoutReload ? <AppButton title="ไปที่งานของฉัน" variant="outline" onPress={() => router.replace('/events')} /> : null}
+    <AppButton title={submitting ? 'กำลังสร้างอีเวนต์...' : 'สร้างอีเวนต์'} onPress={submit} disabled={submitting || savedWithoutReload} />
+    {savedWithoutReload ? <AppButton title="ไปที่อีเวนต์ของฉัน" variant="outline" onPress={() => router.replace('/events')} /> : null}
   </ScrollView></SafeAreaView>;
 }
 
