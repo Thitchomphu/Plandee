@@ -9,7 +9,7 @@ import { AppInput } from '@/components/AppInput';
 import { CurrencyInput, currencyValue } from '@/components/CurrencyInput';
 import { Theme } from '@/constants/theme';
 import { EventPageHeader } from '@/components/EventPageHeader';
-import { addBudgetCategory, getBudgetCategory, setBudgetCategory } from '@/data/eventBudget';
+import { addBudgetCategory, deleteBudgetCategory, getBudgetCategory, setBudgetCategory } from '@/data/eventBudget';
 
 export default function BudgetCategorySetupScreen() {
   const { eventId = '', categoryId } = useLocalSearchParams<{ eventId?: string; categoryId?: string }>();
@@ -35,6 +35,10 @@ export default function BudgetCategorySetupScreen() {
       setSaving(false);
     }
   };
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"><EventPageHeader title={existing ? 'ตั้งงบประมาณหมวดนี้' : 'เพิ่มหมวดงบประมาณ'} backLabel="กลับงบอีเวนต์" onBack={() => router.back()} /><Text style={styles.subtitle}>กำหนดงบตั้งต้นเพื่อใช้คำนวณยอดคงเหลือของหมวด โดยงบทุกหมวดรวมกันต้องไม่เกินงบอีเวนต์</Text><AppInput label="ชื่อหมวด" value={name} onChangeText={setName} editable={!existing} placeholder="เช่น สถานที่ ตกแต่ง หรือดนตรี" /><CurrencyInput label="งบประมาณตั้งต้น (บาท)" value={amount} onChangeText={setAmount} placeholder="เช่น 50,000" /><AppInput label="หมายเหตุ" value={note} onChangeText={setNote} multiline numberOfLines={4} style={styles.note} /><AppButton title={saving ? 'กำลังบันทึก...' : existing ? 'บันทึกงบประมาณ' : 'เพิ่มหมวดงบประมาณ'} onPress={() => { void save(); }} disabled={saving} /><AppButton title="ยกเลิก" onPress={() => router.back()} variant="outline" disabled={saving} /></ScrollView></SafeAreaView>;
+  const remove = () => {
+    if (!categoryId) return;
+    Alert.alert('ลบหมวดงบประมาณนี้?', 'ค่าใช้จ่ายในหมวดนี้จะถูกลบด้วย', [{ text: 'ยกเลิก', style: 'cancel' }, { text: 'ลบหมวด', style: 'destructive', onPress: async () => { const result = await deleteBudgetCategory(eventId, categoryId); if (result.error) Alert.alert('ลบหมวดไม่สำเร็จ', result.error.message); else router.back(); } }]);
+  };
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"><EventPageHeader title={existing ? 'ตั้งงบประมาณหมวดนี้' : 'เพิ่มหมวดงบประมาณ'} backLabel="กลับงบอีเวนต์" onBack={() => router.back()} /><Text style={styles.subtitle}>กำหนดงบตั้งต้นเพื่อใช้คำนวณยอดคงเหลือของหมวด โดยงบทุกหมวดรวมกันต้องไม่เกินงบอีเวนต์</Text><AppInput label="ชื่อหมวด" value={name} onChangeText={setName} editable={!existing} placeholder="เช่น สถานที่ ตกแต่ง หรือดนตรี" /><CurrencyInput label="งบประมาณตั้งต้น (บาท)" value={amount} onChangeText={setAmount} placeholder="เช่น 50,000" /><AppInput label="หมายเหตุ" value={note} onChangeText={setNote} multiline numberOfLines={4} style={styles.note} /><AppButton title={saving ? 'กำลังบันทึก...' : existing ? 'บันทึกงบประมาณ' : 'เพิ่มหมวดงบประมาณ'} onPress={() => { void save(); }} disabled={saving} />{existing && categoryId && !categoryId.startsWith('checklist-') ? <AppButton title="ลบหมวดงบประมาณ" onPress={remove} variant="outline" disabled={saving} /> : null}<AppButton title="ยกเลิก" onPress={() => router.back()} variant="outline" disabled={saving} /></ScrollView></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: Theme.spacing.xl, paddingBottom: 36, gap: Theme.spacing.lg }, subtitle: { color: Theme.colors.muted, fontSize: Theme.type.label }, note: { minHeight: 100, textAlignVertical: 'top', paddingTop: 14 } });

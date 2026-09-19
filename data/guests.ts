@@ -37,6 +37,11 @@ export const updateGuest = async (id: string, patch: Partial<Guest>) => {
   if (!error) guestStore = guestStore.map((guest) => guest.id === id ? next : guest);
   return { error };
 };
+export const deleteGuest = async (id: string) => {
+  const { error } = await supabase.from('guests').delete().eq('id', id);
+  if (!error) guestStore = guestStore.filter((guest) => guest.id !== id);
+  return { error };
+};
 export const getTables = (eventId?: string) => eventId ? tableStore.filter((table) => table.eventId === eventId) : tableStore;
 export const getTable = (id: string) => tableStore.find((table) => table.id === id);
 export const getTableGuests = (tableId: string) => guestStore.filter((guest) => guest.tableId === tableId);
@@ -46,6 +51,22 @@ export const addGuestTable = async (table: Omit<GuestTable, 'id'>) => {
   const created = { ...table, id: (data as { id: string }).id };
   tableStore = [...tableStore, created];
   return { table: created, error: null };
+};
+export const updateGuestTable = async (id: string, patch: Pick<GuestTable, 'name' | 'capacity'>) => {
+  const current = getTable(id);
+  if (!current) return { error: new Error('Table not found') };
+  if (getTableGuests(id).length > patch.capacity) return { error: new Error('จำนวนที่นั่งใหม่ต้องไม่น้อยกว่าจำนวนแขกที่จัดไว้แล้ว') };
+  const { error } = await supabase.from('guest_tables').update({ name: patch.name, capacity: patch.capacity }).eq('id', id);
+  if (!error) tableStore = tableStore.map((table) => table.id === id ? { ...table, ...patch } : table);
+  return { error };
+};
+export const deleteGuestTable = async (id: string) => {
+  const { error } = await supabase.from('guest_tables').delete().eq('id', id);
+  if (!error) {
+    tableStore = tableStore.filter((table) => table.id !== id);
+    guestStore = guestStore.map((guest) => guest.tableId === id ? { ...guest, tableId: undefined } : guest);
+  }
+  return { error };
 };
 export const assignGuestToTable = async (guestId: string, tableId: string) => {
   const table = getTable(tableId);

@@ -9,8 +9,10 @@ export type EventItem = { id: string; title: string; date: string; eventDate: st
 export let events: EventItem[] = [];
 
 type CloudEvent = { id: string; title: string; event_date: string; event_date_label: string | null; venue: string | null; kind: string; status: EventStatus; is_favorite?: boolean; banner_color: string | null; accent_color: string | null; icon: string | null; budget: number };
-const daysUntil = (date: string) => { const today = new Date(); return Math.round((new Date(`${date}T00:00:00`).getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000); };
-const displayDate = (value: string) => new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
+const normalizeDate = (value: string) => value.slice(0, 10);
+const localDate = (value: string) => { const [year, month, day] = normalizeDate(value).split('-').map(Number); return new Date(year, month - 1, day); };
+const daysUntil = (date: string) => { const today = new Date(); return Math.round((localDate(date).getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000); };
+const displayDate = (value: string) => new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(localDate(value));
 
 export async function hydrateEvents() {
   const columns = 'id,title,event_date,event_date_label,venue,kind,status,banner_color,accent_color,icon,budget';
@@ -31,8 +33,10 @@ export async function hydrateEvents() {
   events = cloudEvents.map((event) => {
     const items = checklist.filter((item) => item.event_id === event.id);
     const eventGuests = guests.filter((guest) => guest.event_id === event.id);
-    const storedLabel = event.event_date_label;
-    return { id: event.id, title: event.title, date: storedLabel && !/^\d{4}-\d{2}-\d{2}$/.test(storedLabel) ? storedLabel : displayDate(event.event_date), eventDate: event.event_date, venue: event.venue ?? 'ยังไม่ได้ระบุสถานที่', kind: event.kind, icon: event.icon ?? '📅', daysLeft: daysUntil(event.event_date), progress: items.length ? Math.round((items.filter((item) => item.done).length / items.length) * 100) : 0, planningComplete: items.length > 0 && items.every((item) => item.done), status: event.status, isFavorite: event.is_favorite ?? false, banner: event.banner_color ?? Theme.colors.primarySoft, accent: event.accent_color ?? Theme.colors.primary, budget: Number(event.budget), guests: eventGuests.length, pending: items.filter((item) => !item.done).length };
+    const eventDate = event.event_date_label && /^\d{4}-\d{2}-\d{2}$/.test(event.event_date_label)
+      ? event.event_date_label
+      : normalizeDate(event.event_date);
+    return { id: event.id, title: event.title, date: displayDate(eventDate), eventDate, venue: event.venue ?? 'ยังไม่ได้ระบุสถานที่', kind: event.kind, icon: event.icon ?? '📅', daysLeft: daysUntil(eventDate), progress: items.length ? Math.round((items.filter((item) => item.done).length / items.length) * 100) : 0, planningComplete: items.length > 0 && items.every((item) => item.done), status: event.status, isFavorite: event.is_favorite ?? false, banner: event.banner_color ?? Theme.colors.primarySoft, accent: event.accent_color ?? Theme.colors.primary, budget: Number(event.budget), guests: eventGuests.length, pending: items.filter((item) => !item.done).length };
   });
   return true;
 }
@@ -57,3 +61,15 @@ export async function setEventFavorite(id: string, isFavorite: boolean) {
   if (!error) events = events.map((event) => event.id === id ? { ...event, isFavorite } : event);
   return { error: error && /is_favorite/i.test(error.message) ? new Error('กรุณาเพิ่มคอลัมน์อีเวนต์โปรดด้วย migration 004_event_favorite.sql ก่อน') : error };
 }
+
+export const updateEvent = async (id: string, patch: Pick<EventItem, 'title' | 'kind' | 'eventDate' | 'venue' | 'budget'>) => {
+  const { error } = await supabase.from('events').update({ title: patch.title, kind: patch.kind, event_date: patch.eventDate, event_date_label: patch.eventDate, venue: patch.venue, budget: patch.budget }).eq('id', id);
+  if (!error) events = events.map((event) => event.id === id ? { ...event, ...patch, date: displayDate(patch.eventDate), daysLeft: daysUntil(patch.eventDate) } : event);
+  return { error };
+};
+
+export const deleteEvent = async (id: string) => {
+  const { error } = await supabase.from('events').delete().eq('id', id);
+  if (!error) events = events.filter((event) => event.id !== id);
+  return { error };
+};

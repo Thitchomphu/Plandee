@@ -19,7 +19,7 @@ export default function SeatingScreen() {
 
 function TableCard({ table, eventId, onChanged }: { table: GuestTable; eventId: string; onChanged: () => void }) {
   const guests = getTableGuests(table.id);
-  return <View style={styles.card}><View style={styles.cardHeader}><Text style={styles.tableName}>{table.name}</Text><Text style={styles.count}>{guests.length}/{table.capacity} คน</Text></View><View style={styles.track}><View style={[styles.progress, { width: `${Math.min((guests.length / table.capacity) * 100, 100)}%` }]} /></View><View style={styles.chips}>{guests.length ? guests.map((guest) => <View key={guest.id} style={styles.chip}><Text style={styles.chipText}>{guest.name.split(' ')[0]}</Text><Pressable accessibilityRole="button" accessibilityLabel={`นำ ${guest.name} ออกจาก ${table.name}`} hitSlop={6} style={styles.removeButton} onPress={async () => { const { error } = await removeGuestFromTable(guest.id); if (!error) onChanged(); }}><Text style={styles.remove}>×</Text></Pressable></View>) : <Text style={styles.emptyTable}>ยังไม่มีแขกที่โต๊ะนี้</Text>}</View><Pressable onPress={() => router.push({ pathname: '/event/seat-add', params: { eventId, tableId: table.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มแขกที่โต๊ะนี้</Text></Pressable></View>;
+  return <View style={styles.card}><View style={styles.cardHeader}><Text style={styles.tableName}>{table.name}</Text><Text style={styles.count}>{guests.length}/{table.capacity} คน</Text><Pressable onPress={() => router.push({ pathname: '/event/table-new', params: { eventId, tableId: table.id } })}><Text style={styles.edit}>แก้ไข</Text></Pressable></View><View style={styles.track}><View style={[styles.progress, { width: `${Math.min((guests.length / table.capacity) * 100, 100)}%` }]} /></View><View style={styles.chips}>{guests.length ? guests.map((guest) => <View key={guest.id} style={styles.chip}><Text style={styles.chipText}>{guest.name.split(' ')[0]}</Text><Pressable accessibilityRole="button" accessibilityLabel={`นำ ${guest.name} ออกจาก ${table.name}`} hitSlop={6} style={styles.removeButton} onPress={async () => { const { error } = await removeGuestFromTable(guest.id); if (!error) onChanged(); }}><Text style={styles.remove}>×</Text></Pressable></View>) : <Text style={styles.emptyTable}>ยังไม่มีแขกที่โต๊ะนี้</Text>}</View><Pressable onPress={() => router.push({ pathname: '/event/seat-add', params: { eventId, tableId: table.id } })} style={styles.add}><Text style={styles.addText}>＋ เพิ่มแขกที่โต๊ะนี้</Text></Pressable></View>;
 }
 
 const styles = StyleSheet.create({
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   list: { gap: 12 },
   card: { backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 22, padding: 18, gap: 12 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  tableName: { color: Theme.colors.text, fontSize: 17, fontWeight: '700', flex: 1 },
+  tableName: { color: Theme.colors.text, fontSize: 17, fontWeight: '700', flex: 1 }, edit: { color: Theme.colors.primary, fontSize: Theme.type.caption, fontWeight: '700' },
   count: { color: Theme.colors.muted, fontSize: Theme.type.caption },
   track: { height: 7, backgroundColor: Theme.colors.border, borderRadius: 100, overflow: 'hidden' },
   progress: { height: '100%', backgroundColor: Theme.colors.success, borderRadius: 100 },

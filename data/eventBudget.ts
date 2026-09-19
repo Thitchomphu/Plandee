@@ -99,10 +99,8 @@ export const getExpenseOverrun = (eventId: string, categoryId: string, amount: n
   const previous = expenseId ? categories.flatMap((category) => category.expenses).find((expense) => expense.id === expenseId)?.amount ?? 0 : 0;
   const total = getBudgetBreakdown(categories).allocated - previous + amount;
   const eventBudget = events.find((event) => event.id === eventId)?.budget ?? 0;
-  const category = categories.find((item) => item.id === categoryId);
-  const categoryTotal = category ? getBudgetBreakdown([category]).allocated - previous + amount : 0;
-  if (total <= eventBudget && (!category || categoryTotal <= category.planned)) return null;
-  return `รายการที่คาดว่าจะใช้รวม ${total.toLocaleString('th-TH')} บาท จากงบอีเวนต์ ${eventBudget.toLocaleString('th-TH')} บาท${category && categoryTotal > category.planned ? ` และหมวด ${category.name} เกินวงเงิน ${category.planned.toLocaleString('th-TH')} บาท` : ''}`;
+  if (total <= eventBudget) return null;
+  return `รายการที่คาดว่าจะใช้รวม ${total.toLocaleString('th-TH')} บาท จากงบอีเวนต์ ${eventBudget.toLocaleString('th-TH')} บาท จึงอาจเกินงบ`;
 };
 export const getChecklistCategoryNames = (eventId: string) => Array.from(new Set(['สถานที่', 'อาหาร', 'ตกแต่ง', 'อื่น ๆ', ...getBudgetCategories(eventId).map((category) => category.name)]));
 export const setBudgetCategory = async (eventId: string, categoryId: string, planned: number, note: string) => {
@@ -161,6 +159,24 @@ export const updateBudgetExpense = async (id: string, patch: Pick<BudgetExpense,
   if (error || !data) return { error: error ?? new Error('ไม่พบค่าใช้จ่าย') };
   expenseStore = expenseStore.map((expense) => expense.id === id ? { ...expense, ...patch } : expense);
   return { error: null };
+};
+
+export const deleteBudgetCategory = async (eventId: string, categoryId: string) => {
+  const category = getBudgetCategory(eventId, categoryId);
+  if (!category) return { error: new Error('ไม่พบหมวดงบประมาณ') };
+  if (categoryId.startsWith('checklist-')) return { error: new Error('หมวดจากเช็กลิสต์ไม่สามารถลบได้ ให้ลบหรือแก้ไขรายการเช็กลิสต์แทน') };
+  const { error } = await supabase.from('budget_categories').delete().eq('id', categoryId);
+  if (!error) {
+    customCategories = customCategories.filter((item) => item.id !== categoryId);
+    expenseStore = expenseStore.filter((expense) => expense.categoryId !== categoryId);
+  }
+  return { error };
+};
+
+export const deleteBudgetExpense = async (id: string) => {
+  const { error } = await supabase.from('budget_expenses').delete().eq('id', id);
+  if (!error) expenseStore = expenseStore.filter((expense) => expense.id !== id);
+  return { error };
 };
 
 export const recordChecklistPayment = async (eventId: string, categoryId: string, checklistItemId: string, name: string, amount: number) => {

@@ -55,7 +55,7 @@ export default function BudgetScreen() {
     {loading && !summaries.length ? <ActivityIndicator color={Theme.colors.primary} /> : null}
     {summaries.length ? <LinearGradient colors={Theme.gradients.budget} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={summaryStyles.card}>
       <Text style={summaryStyles.eyebrow}>ภาพรวมงบประมาณ</Text>
-      <Text style={summaryStyles.label}>{remaining < 0 ? 'เกินงบ' : remaining === 0 ? 'จัดสรรครบแล้ว' : 'ยอดคงเหลือ'}</Text>
+      <Text style={summaryStyles.label}>{remaining < 0 ? 'เกินงบ' : totalBudget > 0 && remaining === 0 ? 'จัดสรรครบแล้ว' : totalBudget === 0 ? 'ยังไม่ได้ตั้งงบ' : 'ยอดคงเหลือ'}</Text>
       <Text style={summaryStyles.amount} numberOfLines={1} adjustsFontSizeToFit>{money(Math.abs(remaining))}</Text>
       <Text style={summaryStyles.caption}>ใช้แล้วและวางไว้ {money(totalAllocated)} จากงบ {money(totalBudget)}</Text>
       <View style={summaryStyles.track}><View style={[summaryStyles.progress, { width: `${Math.min(Math.max(percent, 0), 100)}%` }]} /></View>
@@ -65,7 +65,7 @@ export default function BudgetScreen() {
       const eventRemaining = event.budget - allocated;
       return <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`ดูงบประมาณอีเวนต์ ${event.title}`} onPress={() => router.push({ pathname: '/event/budget', params: { eventId: event.id, from: 'budget-tab' } })} style={budgetCardStyles.card}>
         <View style={budgetCardStyles.header}><Text style={budgetCardStyles.eventTitle} numberOfLines={1}>{event.title}</Text><FontAwesome6 name="chevron-right" size={13} color={Theme.colors.muted} /></View>
-        <View style={budgetCardStyles.amountRow}><Text style={[budgetCardStyles.amount, eventRemaining < 0 && budgetCardStyles.overBudget]} numberOfLines={1} adjustsFontSizeToFit>{money(Math.abs(eventRemaining))}</Text><Text style={[budgetCardStyles.balanceLabel, eventRemaining < 0 && budgetCardStyles.overBudget]}>{eventRemaining < 0 ? 'รายการเกินงบ' : eventRemaining === 0 ? 'จัดสรรครบแล้ว' : 'ยอดคงเหลือ'}</Text></View>
+        <View style={budgetCardStyles.amountRow}><Text style={[budgetCardStyles.amount, eventRemaining < 0 && budgetCardStyles.overBudget]} numberOfLines={1} adjustsFontSizeToFit>{money(Math.abs(eventRemaining))}</Text><Text style={[budgetCardStyles.balanceLabel, eventRemaining < 0 && budgetCardStyles.overBudget]}>{eventRemaining < 0 ? 'รายการเกินงบ' : event.budget > 0 && eventRemaining === 0 ? 'จัดสรรครบแล้ว' : event.budget === 0 ? 'ยังไม่ได้ตั้งงบ' : 'ยอดคงเหลือ'}</Text></View>
         <Text style={budgetCardStyles.caption}>ใช้แล้วและวางไว้ {money(allocated)} จากงบ {money(event.budget)}</Text>
         <View style={styles.track}><View style={[styles.progress, { width: `${Math.min(event.budget ? (allocated / event.budget) * 100 : 0, 100)}%` }]} /></View>
       </Pressable>;

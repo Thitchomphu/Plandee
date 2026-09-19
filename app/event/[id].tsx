@@ -2,6 +2,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState, type ComponentProps } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert } from '@/components/AppDialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText as Text } from '@/components/AppText';
 import { EventPageHeader } from '@/components/EventPageHeader';
@@ -10,7 +11,7 @@ import { EventVenueMap } from '@/components/EventVenueMap';
 import { EventTypeIcon } from '@/components/EventTypeIcon';
 import { Theme } from '@/constants/theme';
 import { getChecklistItems, getChecklistProgress, type ChecklistItem } from '@/data/checklists';
-import { events, type EventItem } from '@/data/events';
+import { deleteEvent, events, type EventItem } from '@/data/events';
 
 type IconName = ComponentProps<typeof FontAwesome6>['name'];
 const money = (value: number) => `฿${new Intl.NumberFormat('th-TH', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`;
@@ -34,6 +35,7 @@ export default function EventOverviewScreen() {
     <EventPageHeader title="ภาพรวมอีเวนต์" backLabel="ย้อนกลับ" onBack={() => router.canGoBack() ? router.back() : router.replace('/events')} />
 
     <EventIdentity event={event} />
+    <View style={styles.eventActions}><Pressable onPress={() => router.push({ pathname: '/event/edit', params: { id: event.id } })} style={styles.editAction}><Text style={styles.editActionText}>แก้ไขอีเวนต์</Text></Pressable><Pressable onPress={() => Alert.alert('ลบอีเวนต์นี้?', 'ข้อมูลเช็กลิสต์ แขก โต๊ะ และงบประมาณที่เกี่ยวข้องจะถูกลบทั้งหมด', [{ text: 'ยกเลิก', style: 'cancel' }, { text: 'ลบอีเวนต์', style: 'destructive', onPress: async () => { const result = await deleteEvent(event.id); if (result.error) Alert.alert('ลบอีเวนต์ไม่สำเร็จ', result.error.message); else router.replace('/events'); } }])} style={styles.deleteAction}><Text style={styles.deleteActionText}>ลบอีเวนต์</Text></Pressable></View>
 
     <View style={styles.section}><View style={styles.sectionHeading}><Text style={styles.sectionTitle}>จัดการอีเวนต์นี้</Text><Text style={styles.sectionHint}>เปิดดูรายละเอียดแต่ละด้าน</Text></View>
       <View style={styles.summaryGrid}>
@@ -69,6 +71,7 @@ function SummaryCard({ icon, label, value, detail, color, background, onPress }:
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { paddingHorizontal: Theme.spacing.xl, paddingTop: 12, paddingBottom: 48, gap: Theme.spacing.xl }, pressed: { opacity: 0.82 },
   identity: { borderRadius: 22, backgroundColor: Theme.colors.surface, borderWidth: 1, borderColor: Theme.colors.border, padding: 18, gap: 12 },
+  eventActions: { flexDirection: 'row', gap: 10 }, editAction: { flex: 1, minHeight: 48, borderRadius: 15, backgroundColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' }, editActionText: { color: '#FFFFFF', fontWeight: '700' }, deleteAction: { flex: 1, minHeight: 48, borderRadius: 15, borderWidth: 1, borderColor: Theme.colors.primary, alignItems: 'center', justifyContent: 'center' }, deleteActionText: { color: Theme.colors.primary, fontWeight: '700' },
   identityTop: { flexDirection: 'row', alignItems: 'center', gap: 12 }, identityIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft }, identityCopy: { flex: 1, gap: 2 },
   identityKind: { color: Theme.colors.primary, fontSize: Theme.type.micro, fontWeight: '700' }, identityTitle: { color: Theme.colors.text, fontSize: 22, lineHeight: 30, fontWeight: '800' },
   identityMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 }, identityMetaText: { color: Theme.colors.muted, fontSize: Theme.type.caption, flexShrink: 1 },

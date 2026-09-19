@@ -68,10 +68,9 @@ export default function HomeScreen() {
   };
   const otherEvents = items.filter((event) => event.id !== featuredEvent?.id).slice(0, 2);
   const allUrgent = urgentTasks(getChecklistItems().filter((task) => items.some((event) => event.id === task.eventId)));
-  const urgent = allUrgent.slice(0, 5);
-  const urgentIds = new Set(urgent.map((task) => task.id));
+  const urgent: ChecklistItem[] = [];
   const nextEventPending = nextEvent ? getChecklistItems(nextEvent.id).filter((item) => !item.done) : [];
-  const nextTasks = nextEventPending.filter((task) => !urgentIds.has(task.id))
+  const nextTasks = nextEventPending.filter((task) => dueStatus(task) === null)
     .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')).slice(0, 2);
   const pendingCount = items.reduce((sum, event) => sum + getChecklistItems(event.id).filter((item) => !item.done).length, 0);
   const totalBudget = items.reduce((sum, event) => sum + event.budget, 0);
@@ -86,6 +85,7 @@ export default function HomeScreen() {
     {loadError ? <Pressable accessibilityRole="button" onPress={() => { void refresh(); }} style={styles.errorCard}><Text style={styles.errorTitle}>โหลดข้อมูลหน้าแรกไม่สำเร็จ</Text><Text style={styles.errorDetail}>แตะเพื่อลองใหม่ หรือเช็กการเชื่อมต่ออินเทอร์เน็ต</Text></Pressable> : null}
     {loading && !items.length ? <ActivityIndicator color={Theme.colors.primary} /> : null}
     {featuredEvent ? <FeaturedEvent event={featuredEvent} progress={getChecklistProgress(featuredEvent.id)} isNext={featuredEvent.id === nextEvent?.id} today={today} onToggleFavorite={() => { void toggleFavorite(featuredEvent); }} /> : !loading && !loadError ? <EmptyHero /> : null}
+    {allUrgent.length ? <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')} style={styles.alertSummary}><FontAwesome6 name="bell" size={16} color={Theme.colors.primary} /><View style={styles.flex}><Text style={styles.alertTitle}>มีงานที่ต้องติดตาม {allUrgent.length} รายการ</Text><Text style={styles.alertDetail}>ดูรายละเอียดทั้งหมดในหน้าแจ้งเตือน</Text></View><FontAwesome6 name="arrow-right" size={13} color={Theme.colors.primary} /></Pressable> : null}
 
     {urgent.length ? <View style={styles.section}>
       <SectionHeader title={`งานใกล้ครบกำหนด · ${allUrgent.length}`} onPress={() => router.push('/reminders')} />
@@ -161,7 +161,7 @@ function CompactEvent({ event }: { event: EventItem }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Theme.colors.background },
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 112, gap: 26 },
-  flex: { flex: 1 }, pressed: { opacity: 0.84 },
+  flex: { flex: 1 }, alertSummary: { minHeight: 68, borderRadius: 18, backgroundColor: Theme.colors.primarySoft, borderWidth: 1, borderColor: Theme.colors.border, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }, alertTitle: { color: Theme.colors.primary, fontSize: Theme.type.body, fontWeight: '700' }, alertDetail: { color: Theme.colors.muted, fontSize: Theme.type.caption, marginTop: 3 }, pressed: { opacity: 0.84 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 }, headerCopy: { flex: 1, gap: 2 },
   eyebrow: { color: Theme.colors.primary, fontSize: 13, fontWeight: '700' }, greeting: { color: Theme.colors.text, fontSize: 27, fontWeight: '800', lineHeight: 37 }, subtitle: { color: Theme.colors.muted, fontSize: 14 },
   headerAction: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.primarySoft },

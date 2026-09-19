@@ -10,7 +10,7 @@ import { CurrencyInput, currencyValue } from '@/components/CurrencyInput';
 import { Theme } from '@/constants/theme';
 import { EventPageHeader } from '@/components/EventPageHeader';
 import { getChecklistItem } from '@/data/checklists';
-import { addBudgetExpense, getBudgetCategory, getExpenseOverrun, recordChecklistPayment, updateBudgetExpense } from '@/data/eventBudget';
+import { addBudgetExpense, deleteBudgetExpense, getBudgetCategory, getExpenseOverrun, recordChecklistPayment, updateBudgetExpense } from '@/data/eventBudget';
 
 export default function BudgetExpenseFormScreen() {
   const { eventId = '', categoryId = '', expenseId, checklistItemId } = useLocalSearchParams<{ eventId?: string; categoryId?: string; expenseId?: string; checklistItemId?: string }>();
@@ -27,7 +27,7 @@ export default function BudgetExpenseFormScreen() {
           ? await updateBudgetExpense(expenseId, { name: name.trim(), amount: parsed, paid })
           : await addBudgetExpense({ eventId, categoryId, name: name.trim(), amount: parsed, paid });
       if (result.error) return Alert.alert('บันทึกไม่สำเร็จ', result.error.message);
-      router.back();
+      Alert.alert('บันทึกสำเร็จ', 'บันทึกค่าใช้จ่ายเรียบร้อยแล้ว', [{ text: 'ตกลง', onPress: () => router.back() }]);
     } catch {
       Alert.alert('บันทึกไม่สำเร็จ', 'ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง');
     } finally {
@@ -45,6 +45,10 @@ export default function BudgetExpenseFormScreen() {
     ]);
     void persist(parsed);
   };
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"><EventPageHeader title={checklistItemId ? 'บันทึกการจ่ายเงิน' : expense ? 'แก้ไขค่าใช้จ่าย' : 'เพิ่มค่าใช้จ่าย'} backLabel="กลับหมวดงบอีเวนต์" onBack={() => router.back()} /><Text style={styles.subtitle}>{checklistItemId ? 'ยอดประมาณการจากเช็กลิสต์จะถูกแทนด้วยยอดที่จ่ายจริง ไม่ได้นับซ้ำ' : 'บันทึกรายการย่อยของหมวดงบประมาณ'}</Text><AppInput label="ชื่อรายการ" value={name} onChangeText={setName} placeholder="เช่น ค่าเช่าอุปกรณ์" /><CurrencyInput label="จำนวนเงิน (บาท)" value={amount} onChangeText={setAmount} placeholder="เช่น 15,000" />{!checklistItemId ? <AppButton title={paid ? 'สถานะ: จ่ายแล้ว' : 'สถานะ: ยังไม่จ่าย'} onPress={() => setPaid((value) => !value)} variant="outline" disabled={saving} /> : null}<AppButton title={saving ? 'กำลังบันทึก...' : checklistItemId ? 'ยืนยันว่าจ่ายแล้ว' : expense ? 'บันทึกการแก้ไข' : 'เพิ่มค่าใช้จ่าย'} onPress={save} disabled={saving} /><AppButton title="ยกเลิก" onPress={() => router.back()} variant="outline" disabled={saving} /></ScrollView></SafeAreaView>;
+  const remove = () => {
+    if (!expenseId) return;
+    Alert.alert('ลบค่าใช้จ่ายนี้?', 'รายการนี้จะถูกลบออกจากงบประมาณ', [{ text: 'ยกเลิก', style: 'cancel' }, { text: 'ลบรายการ', style: 'destructive', onPress: async () => { const result = await deleteBudgetExpense(expenseId); if (result.error) Alert.alert('ลบค่าใช้จ่ายไม่สำเร็จ', result.error.message); else router.back(); } }]);
+  };
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"><EventPageHeader title={checklistItemId ? 'บันทึกการจ่ายเงิน' : expense ? 'แก้ไขค่าใช้จ่าย' : 'เพิ่มค่าใช้จ่าย'} backLabel="กลับหมวดงบอีเวนต์" onBack={() => router.back()} /><Text style={styles.subtitle}>{checklistItemId ? 'ยอดประมาณการจากเช็กลิสต์จะถูกแทนด้วยยอดที่จ่ายจริง ไม่ได้นับซ้ำ' : 'บันทึกรายการย่อยของหมวดงบประมาณ'}</Text><AppInput label="ชื่อรายการ" value={name} onChangeText={setName} placeholder="เช่น ค่าเช่าอุปกรณ์" /><CurrencyInput label="จำนวนเงิน (บาท)" value={amount} onChangeText={setAmount} placeholder="เช่น 15,000" />{!checklistItemId ? <AppButton title={paid ? 'สถานะ: จ่ายแล้ว' : 'สถานะ: ยังไม่จ่าย'} onPress={() => setPaid((value) => !value)} variant="outline" disabled={saving} /> : null}<AppButton title={saving ? 'กำลังบันทึก...' : checklistItemId ? 'ยืนยันว่าจ่ายแล้ว' : expense ? 'บันทึกการแก้ไข' : 'เพิ่มค่าใช้จ่าย'} onPress={save} disabled={saving} />{expense ? <AppButton title="ลบค่าใช้จ่ายนี้" onPress={remove} variant="outline" disabled={saving} /> : null}<AppButton title="ยกเลิก" onPress={() => router.back()} variant="outline" disabled={saving} /></ScrollView></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Theme.colors.background }, content: { padding: Theme.spacing.xl, paddingBottom: 36, gap: Theme.spacing.lg }, subtitle: { color: Theme.colors.muted, fontSize: Theme.type.label } });
